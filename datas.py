@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
 from tensorflow.examples.tutorials.mnist import input_data
-import cPickle
+import pickle
 import random as random
 from sklearn.datasets import make_moons
 from scipy.io import loadmat
@@ -111,7 +111,7 @@ class Cifar10():
 
         def unpickle(f):
             fo = open(f, 'rb')
-            d = cPickle.load(fo)
+            d = pickle.load(fo)
             fo.close()
             return d
 
@@ -416,6 +416,7 @@ class facescrub():
                 for imgfile in glob(class_label + '/*.png'):
                     files_and_labels.append((imgfile, class_label.split('/')[-1]))
 
+            print('files_and_labels:', files_and_labels)
             filenames, labels = zip(*files_and_labels)
             filenames = list(filenames)
             labels = list(labels)

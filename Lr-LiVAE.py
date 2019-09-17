@@ -315,12 +315,12 @@ class GMM_AE_GAN():
         if restore:
             try:
                 ckpt = tf.train.get_checkpoint_state(self.model_dir)
-                print 'Restoring from {}...'.format(ckpt.model_checkpoint_path),
-                self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+                print('Restoring from {}...'.format(ckpt.model_checkpoint_path),
+                self.saver.restore(self.sess, ckpt.model_checkpoint_path))
                 stem = os.path.splitext(os.path.basename(ckpt.model_checkpoint_path))[1]
                 restore_iter = int(stem.split('-')[-1])
                 i = restore_iter / 1000
-                print 'done'
+                print('done')
             except:
                 raise 'Check your pretrained {:s}'.format(ckpt.model_checkpoint_path)
         self.summary_writer = tf.summary.FileWriter(self.log_dir, self.sess.graph)
@@ -448,8 +448,8 @@ class GMM_AE_GAN():
 
     def draw_zc_distribution(self, model_step, batch_size=100):
         # ckpt = tf.train.get_checkpoint_state(model_dir)
-        print 'Restoring from {}...'.format('model.ckpt-' + str(model_step)),
-        self.saver.restore(self.sess, os.path.join(self.model_dir, 'model.ckpt-' + str(model_step)))
+        print('Restoring from {}...'.format('model.ckpt-' + str(model_step)),
+        self.saver.restore(self.sess, os.path.join(self.model_dir, 'model.ckpt-' + str(model_step))))
         means, covariance = self.sess.run([self.means_c, self.covariance_c])
         zs = [[] for _ in range(min(self.y_dim, 10))]
         clsnum = [0 for _ in range(min(self.y_dim, 10))]
@@ -483,7 +483,7 @@ class GMM_AE_GAN():
 
     def draw_zp_distribution(self, model_step, batch_size=100):
         # ckpt = tf.train.get_checkpoint_state(model_dir)
-        print 'Restoring from {}...'.format('model.ckpt-' + str(model_step))
+        print('Restoring from {}...'.format('model.ckpt-' + str(model_step)))
         self.saver.restore(self.sess, os.path.join(self.model_dir, 'model.ckpt-' + str(model_step)))
         zs = [[] for _ in range(min(self.y_dim, 10))]
         clsnum = [0 for _ in range(min(self.y_dim, 10))]
@@ -520,7 +520,7 @@ class GMM_AE_GAN():
         mask = np.ones((bs, self.data.size, self.data.size, self.data.channel))
         mask[:, coord[0]:coord[0]+20,coord[1]:coord[1]+20, :] = 0
         image_corp = image * mask
-        print 'Restoring from {}...'.format('model.ckpt-' + str(model_step))
+        print('Restoring from {}...'.format('model.ckpt-' + str(model_step)))
         self.saver.restore(self.sess, os.path.join(self.model_dir, 'model.ckpt-' + str(model_step)))
         gen_image = self.sess.run(self.G_dec, feed_dict={self.X: image_corp})
         inpaint_image = image * mask + gen_image * (1-mask)
@@ -543,7 +543,7 @@ class GMM_AE_GAN():
         plt.close(fig)
 
     def exchange_id_att(self, model_step):
-        print 'Restoring from {}...'.format('model.ckpt-' + str(model_step))
+        print('Restoring from {}...'.format('model.ckpt-' + str(model_step)))
         self.saver.restore(self.sess, os.path.join(self.model_dir,'model.ckpt-' + str(model_step)))
         if not os.path.exists(os.path.join(self.model_dir, str(model_step)+'_exc')):
             os.makedirs(os.path.join(self.model_dir, str(model_step)+'_exc'))
