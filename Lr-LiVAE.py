@@ -181,9 +181,9 @@ class GMM_AE_GAN():
         self.data = data
         self.learn_rate_init = learn_rate_init
 
-        self.z_dim = self.data.z_dim
+        self.z_dim = self.data.z_dim # 100
         if hasattr(self.data, 'zc_dim'):
-            self.zc_dim = self.data.zc_dim
+            self.zc_dim = self.data.zc_dim # 32
         else:
             self.zc_dim = self.z_dim
 
@@ -205,7 +205,7 @@ class GMM_AE_GAN():
         # nets
 
         # Identity
-        self.z_enc_c, self.means_c, self.variance_c_var, self.covariance_c = self.identity(self.X, self.is_training)
+        self.z_enc_c, self.means_c, self.variance_c_var, self.covariance_c = self.identity(self.X, self.is_training) # BUGFIX: problem here?
 
         # self.covariance_c = tf.exp(tf.minimum(self.log_covariance_c, np.log(100)))
 
@@ -223,6 +223,13 @@ class GMM_AE_GAN():
         self.G_dec = self.generator(self.z_enc_c, self.z_enc_p, self.is_training)
 
 #        self.z_sample_c = self.z_c * tf.sqrt(tf.gather(self.covariance_c, self.Y_rand)) + tf.gather(self.means_c, self.Y_rand)
+        # to debug
+#         print('error shape?')
+#         print('self.z_c',self.z_c)
+#         print('self.covariance_c',self.covariance_c)
+#         print('self.Y_rand',self.Y_rand)
+#         print('self.means_c',self.means_c)
+#         print('self.Y_rand',self.Y_rand)
         self.z_sample_c = self.z_c / tf.sqrt(tf.gather(self.covariance_c, self.Y_rand)) + tf.gather(self.means_c, self.Y_rand)
         self.G_sample = self.generator(self.z_sample_c, self.z_p, self.is_training, reuse=True)
 
@@ -589,9 +596,12 @@ if __name__ == '__main__':
     parser.add_argument('--experiment_name', default='facescrub-64')
     parser.add_argument('--batch_size', type=int, default=96)
     parser.add_argument('--mode', default='training', choices=['training', 'generation', 'inpainting', 'exchanging'])
+    # add dataset choice
+    parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist'])
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    # TODO: img_size should be different corresponding to dataset
     img_size = args.img_size
     experiment_name = args.experiment_name
     batch_size = args.batch_size
@@ -601,12 +611,22 @@ if __name__ == '__main__':
     if not os.path.exists(sample_folder):
         os.makedirs(sample_folder)
 
-    data = facescrub(is_tanh=True, size = img_size)
-    generator = GeneratorFace(size = data.size)
-    identity = IdentityFace(data.y_dim, data.z_dim, size = data.size)
-    attribute = AttributeFace(data.z_dim, size = data.size)
-    discriminator = DiscriminatorFaceSN(size=data.size)
-    latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+    if args.dataset == 'facescrub':
+        data = facescrub(is_tanh=True, size = img_size)
+        generator = GeneratorFace(size = data.size)
+        identity = IdentityFace(data.y_dim, data.z_dim, size = data.size)
+        attribute = AttributeFace(data.z_dim, size = data.size)
+        discriminator = DiscriminatorFaceSN(size=data.size)
+        latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+    elif args.dataset == 'mnist':
+        data = mnist(is_tanh=True)
+        generator = GeneratorMnist(size = data.size)
+#         identity = IdentityMnist(data.y_dim, data.z_dim, size = data.size) # z_dim should be data.zc_dim ??
+        identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size) # z_dim should be data.zc_dim ??
+        attribute = AttributeMnist(data.z_dim, size = data.size)
+        discriminator = DiscriminatorMnistSN(size=data.size)
+#         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
+        latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
 
 
     is_training = True

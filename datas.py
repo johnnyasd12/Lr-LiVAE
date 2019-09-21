@@ -49,6 +49,11 @@ class mnist():
         else:
             self.channel = 1 # for conv
         self.data = input_data.read_data_sets(datapath, one_hot=False)
+        if not test_batch:
+            self.num_examples = self.data.train.num_examples
+        else:
+            pass # ???
+#         print('mnist: num_examples =',self.num_examples)
         self.flag = flag
         self.is_tanh = is_tanh
 
@@ -89,6 +94,11 @@ class mnist():
                 plt.imshow(sample.reshape(self.size, self.size), cmap='Greys_r')
         return fig
 
+class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
+    def __init__(self, flag='conv', is_tanh = False, test_batch = False, all_images = True):
+        pass
+    
+    
 class Cifar10():
     def __init__(self, flag='conv', is_tanh = False, test_batch = False, all_images = True):
         datapath = prefix + 'cifar-10-batches-py'
