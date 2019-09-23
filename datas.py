@@ -58,6 +58,10 @@ class mnist():
         self.is_tanh = is_tanh
 
     def __call__(self,batch_size):
+        ''' return batch data
+        :return batch_imgs: numpy.ndarray, shape=[batch_size, img_size, img_size, img_channel]
+        :return y: numpy.ndarray, shape=[batch_size, ]
+        '''
         if self.test_batch:
             batch_imgs, y = self.data.validation.next_batch(batch_size)
         else:
@@ -76,6 +80,9 @@ class mnist():
         return batch_imgs, y
 
     def data2fig(self, samples, nr = 4, nc = 4):
+        '''
+        :return: pyplot.figure
+        '''
         if self.is_tanh:
             samples = (samples + 1)/2
         fig = plt.figure(figsize=(4, 4))
@@ -95,7 +102,7 @@ class mnist():
         return fig
 
 class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
-    def __init__(self, flag='conv', is_tanh = False, test_batch = False, all_images = True):
+    def __init__(self, datapath, flag='conv', is_tanh = False, test_batch = False, all_images = True):
         self.X_dim = 84*84*3  # for mlp
         self.z_dim = 100
         self.zc_dim = 32
@@ -106,10 +113,12 @@ class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
         self.size = 84 # for conv
         self.test_batch = test_batch
         self.data = None
-        if not test_batch:
-            self.num_examples = self.data.train.num_examples
+        if all_images:
+            self.num_examples = 100*600
+        elif not test_batch:
+            self.num_examples = 64*600
         else:
-            pass # ???
+            self.num_examples = 16*600
         self.flag = flag
         self.is_tanh = is_tanh
         

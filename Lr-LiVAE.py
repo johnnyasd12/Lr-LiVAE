@@ -15,6 +15,9 @@ from sklearn.manifold import TSNE
 from ops import *
 import argparse
 
+from skimage import img_as_ubyte
+
+
 d_scale_factor = 0.25
 g_scale_factor = 1 - 0.75 / 2
 
@@ -392,7 +395,7 @@ class GMM_AE_GAN():
             for j, sample in enumerate(samples):
                 sampleNo += 1
                 sample_path = os.path.join(self.model_dir, str(model_step), str(y_rand[j]) + '_' + str(sampleNo) + '.jpg')
-                skimage.io.imsave(sample_path, sample)
+                skimage.io.imsave(sample_path, img_as_ubyte(sample))
 
     def vary_zs_across_c(self, model_step, batch_size=20):
         if not os.path.exists(os.path.join(self.model_dir, str(model_step) + '_varyzs')):
@@ -418,7 +421,7 @@ class GMM_AE_GAN():
         for i in range(batch_size):
             for j in range(8):
                 sample_path = os.path.join(self.model_dir, str(model_step) + '_varyzs', str(i) + '_' + str(j)+ '.jpg')
-                skimage.io.imsave(sample_path, samples[8*i+j])
+                skimage.io.imsave(sample_path, img_as_ubyte(samples[8*i+j]))
 
     def vary_z(self, model_step, batch_size=24):
         if not os.path.exists(os.path.join(self.model_dir, str(model_step) + '_varyz')):
@@ -450,7 +453,7 @@ class GMM_AE_GAN():
         for i in range(batch_size):
             for j in range(8):
                 sample_path = os.path.join(self.model_dir, str(model_step) + '_varyz', 'zu_' + str(i) + '_' + str(j) + '.jpg')
-                skimage.io.imsave(sample_path, samples[8 * i + j])
+                skimage.io.imsave(sample_path, img_as_ubyte(samples[8 * i + j]))
 
 
     def draw_zc_distribution(self, model_step, batch_size=100):
@@ -580,7 +583,7 @@ class GMM_AE_GAN():
             col = (j + 1) % (bs/2 + 1)
             row = (j + 1) / (bs/2 + 1)
             sample_path = os.path.join(self.model_dir, str(model_step)+'_exc', str(row) + '_' + str(col) + '.jpg')
-            skimage.io.imsave(sample_path, sample)
+            skimage.io.imsave(sample_path, img_as_ubyte(sample))
 
 
 
