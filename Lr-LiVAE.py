@@ -384,8 +384,8 @@ class GMM_AE_GAN():
             os.makedirs(os.path.join(self.model_dir, str(model_step)))
         batch_size = 530
         sampleNo = 0
-        for i in range(num_samples / batch_size):
-            y_rand = np.tile(np.arange(0, self.y_dim), batch_size / self.y_dim)
+        for i in range(num_samples // batch_size):
+            y_rand = np.tile(np.arange(0, self.y_dim), batch_size // self.y_dim)
             samples = self.sess.run(self.G_sample, feed_dict={self.z_c: sample_z(batch_size, self.zc_dim), self.z_p: sample_z(batch_size, self.z_dim), self.Y_rand: y_rand})
             if self.data.is_tanh:
                 samples = (samples + 1) / 2
@@ -462,7 +462,7 @@ class GMM_AE_GAN():
         clsnum = [0 for _ in range(min(self.y_dim, 10))]
         # num_examples = self.data.data.train.num_examples
         num_examples = 20000
-        for iter in range(num_examples / batch_size):
+        for iter in range(num_examples // batch_size):
             X_b, Y_b = self.data(batch_size)
             z_b = self.sess.run(self.z_enc_c, feed_dict={self.X: X_b})
             for index, y in enumerate(Y_b):
@@ -496,7 +496,7 @@ class GMM_AE_GAN():
         clsnum = [0 for _ in range(min(self.y_dim, 10))]
         # num_examples = self.data.data.train.num_examples
         num_examples = 20000
-        for iter in range(num_examples / batch_size):
+        for iter in range(num_examples // batch_size):
             X_b, Y_b = self.data(batch_size)
             z_b = self.sess.run(self.z_enc_p, feed_dict={self.X: X_b})
             for index, y in enumerate(Y_b):
@@ -632,18 +632,17 @@ if __name__ == '__main__':
     is_training = True
     # run
 
-    training_iters = {'mnist':10001, 'facescrub':320001}
     wgan = GMM_AE_GAN(generator, identity, attribute, discriminator, latent_discriminator, data, is_training,
                       log_dir=os.path.join('logs', experiment_name),
                       model_dir=os.path.join('models',experiment_name))
     if mode == 'training':
+        training_iters = {'mnist':10001, 'facescrub':52001}
         wgan.train(sample_folder, training_iters=training_iters[args.dataset], batch_size = batch_size, restore = False)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
-        if args.dataset == 'facescrub':
-            wgan.gen_samples(52000, 53000)
-        else:
-            print('code unfinished!!!!!!!')
+        model_step = {'mnist':10000, 'facescrub':52000}
+        num_samples = {'mnist':5300, 'facescrub':53000}
+        wgan.gen_samples(model_step=model_step[args.dataset], num_samples=num_samples[args.dataset])
     elif mode == 'inpainting':
         if args.dataset == 'facescrub':
             wgan.image_inpainting(52000)
