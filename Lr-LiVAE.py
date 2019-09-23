@@ -632,16 +632,23 @@ if __name__ == '__main__':
     is_training = True
     # run
 
+    training_iters = {'mnist':10001, 'facescrub':320001}
     wgan = GMM_AE_GAN(generator, identity, attribute, discriminator, latent_discriminator, data, is_training,
                       log_dir=os.path.join('logs', experiment_name),
                       model_dir=os.path.join('models',experiment_name))
     if mode == 'training':
-        wgan.train(sample_folder, batch_size = batch_size, restore = False)
+        wgan.train(sample_folder, training_iter=training_iters[args.dataset], batch_size = batch_size, restore = False)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
-        wgan.gen_samples(52000, 53000)
+        if args.dataset == 'facescrub':
+            wgan.gen_samples(52000, 53000)
+        else:
+            print('code unfinished!!!!!!!')
     elif mode == 'inpainting':
-        wgan.image_inpainting(52000)
+        if args.dataset == 'facescrub':
+            wgan.image_inpainting(52000)
+        else:
+            print('code unfinished!!!!!!')
     # wgan.vary_zs_across_c(52000)
     # wgan.vary_z(52000)
     elif mode == 'exchanging':

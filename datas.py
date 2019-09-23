@@ -96,8 +96,31 @@ class mnist():
 
 class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
     def __init__(self, flag='conv', is_tanh = False, test_batch = False, all_images = True):
-        pass
+        self.X_dim = 84*84*3  # for mlp
+        self.z_dim = 100
+        self.zc_dim = 32
+        if all_images:
+            self.y_dim = 100
+        else:
+            self.y_dim = 64
+        self.size = 84 # for conv
+        self.test_batch = test_batch
+        self.data = None
+        if not test_batch:
+            self.num_examples = self.data.train.num_examples
+        else:
+            pass # ???
+        self.flag = flag
+        self.is_tanh = is_tanh
+        
+    def __call__(self,batch_size):
+        batch_imgs = None
+        ys = None
+        return batch_imgs, ys
     
+    def data2fig(self, samples, nr = 4, nc = 4):
+        fig = None
+        return fig
     
 class Cifar10():
     def __init__(self, flag='conv', is_tanh = False, test_batch = False, all_images = True):
