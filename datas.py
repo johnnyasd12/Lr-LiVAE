@@ -17,6 +17,8 @@ from sklearn.utils import check_random_state
 from sklearn.utils import shuffle as util_shuffle
 import skimage.io
 
+import json
+
 prefix = './Datas/'
 def get_img(img_path, crop_h, resize_h):
     img=scipy.misc.imread(img_path).astype(np.float)
@@ -102,33 +104,89 @@ class mnist():
         return fig
 
 class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
-    def __init__(self, datapath, flag='conv', is_tanh = False, test_batch = False, all_images = True):
+    def __init__(self, datapath, flag='conv', is_tanh = False, mode='all'):
         self.X_dim = 84*84*3  # for mlp
         self.z_dim = 100
         self.zc_dim = 32
-        if all_images:
-            self.y_dim = 100
-        else:
-            self.y_dim = 64
+        self.mode = mode # 'all', 'train', 'val', 'test'
+        y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
+        self.y_dim = y_dims[mode]
         self.size = 84 # for conv
-        self.test_batch = test_batch
-        self.data = None
-        if all_images:
-            self.num_examples = 100*600
-        elif not test_batch:
-            self.num_examples = 64*600
-        else:
-            self.num_examples = 16*600
+        self.channel = 3
+        self.meta = self.datapath2meta(datapath)
+        self.num_examples = self.y_dim*600
         self.flag = flag
         self.is_tanh = is_tanh
         
+        self.pointer = 0
+        self.shuffle_data()
+    
+    def datapath2meta(self, datapath):
+        json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
+        datapath = os.path.join(datapath, json_file[self.mode])
+        with open(datapath, 'r') as f:
+            meta = json.load(f)
+        return meta
+    
+    def paths2data(self, paths):
+        imgs = []
+        for img_path in paths:
+#             image_path = self.meta['image_names'][i]
+            img = Image.open(img_path).convert('RGB')
+            img = img.resize((self.size, self.size))
+            img = np.asarray(img)
+            img = img[np.newaxis, ...]
+            imgs.append(img)
+        imgs = np.concatenate(imgs, axis=0)
+        return imgs
+    
+    def shuffle_data(self):
+        indices = np.random.permutation(self.num_examples)
+        self.meta['image_labels'] = np.asarray(self.meta['image_labels'])[indices]
+        self.meta['image_names'] = np.asarray(self.meta['image_names'])[indices]
+    
     def __call__(self,batch_size):
-        batch_imgs = None
-        ys = None
-        return batch_imgs, ys
+        if self.pointer + batch_size > self.num_examples:
+            rest_num_examples = self.num_examples - self.pointer
+            paths_rest_part = self.meta['image_names'][self.pointer:self.num_examples]
+            images_rest_part = self.paths2data(paths_rest_part)
+            labels_rest_part = self.meta['image_labels'][self.pointer:self.num_examples]
+            self.shuffle_data()
+            self.pointer = batch_size - rest_num_examples
+            paths_new_part = self.meta['image_names'][0:self.pointer]
+            images_new_part = self.paths2data(paths_new_part)
+            labels_new_part = self.meta['image_labels'][0:self.pointer]
+            
+            batch_data = np.concatenate((images_rest_part, images_new_part), axis=0)
+            labels = labels_rest_part + labels_new_part
+        
+        else:
+            start = self.pointer
+            self.pointer += batch_size
+            paths = self.meta['image_names'][start:self.pointer]
+            batch_data = self.paths2data(paths)
+            labels = self.meta['image_labels'][start:self.pointer]
+        
+        batch_data = batch_data/255.
+        if self.is_tanh:
+            batch_data = batch_data*2 - 1
+        
+        return batch_data, labels
     
     def data2fig(self, samples, nr = 4, nc = 4):
-        fig = None
+        if self.is_tanh:
+            samples = (samples + 1) / 2
+        fig = plt.figure(figsize=(4, 4))
+        gs = gridspec.GridSpec(nr, nc)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i, sample in enumerate(samples):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
         return fig
     
 class Cifar10():
