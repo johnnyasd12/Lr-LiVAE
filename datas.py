@@ -104,14 +104,14 @@ class mnist():
         return fig
 
 class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
-    def __init__(self, datapath, flag='conv', is_tanh = False, mode='all'):
-        self.X_dim = 84*84*3  # for mlp
+    def __init__(self, datapath, size, flag='conv', is_tanh = False, mode='all'):
+        self.X_dim = size*size*3  # for mlp
         self.z_dim = 100
         self.zc_dim = 32
         self.mode = mode # 'all', 'train', 'val', 'test'
         y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
         self.y_dim = y_dims[mode]
-        self.size = 84 # for conv
+        self.size = size # for conv
 
         self.channel = 3
         self.meta = self.datapath2meta(datapath)
