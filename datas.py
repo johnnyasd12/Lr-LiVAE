@@ -112,9 +112,11 @@ class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
         y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
         self.y_dim = y_dims[mode]
         self.size = 84 # for conv
+
         self.channel = 3
         self.meta = self.datapath2meta(datapath)
         self.num_examples = self.y_dim*600
+
         self.flag = flag
         self.is_tanh = is_tanh
         
