@@ -66,7 +66,7 @@ def VGG16(inputs, out_dim, keep_prob = 0.5, is_training = True, isvae = False, s
                          normalizer_params={'scale': True, 'is_training': is_training})
     # out = tcl.max_pool2d(out, kernel_size=2, stride=2)
 
-    out = tcl.avg_pool2d(out, kernel_size= size/(2**5), stride=size/(2**5))
+    out = tcl.avg_pool2d(out, kernel_size= size//(2**5), stride=size//(2**5))
 
     out = tcl.flatten(out)
 
@@ -201,7 +201,7 @@ class GeneratorFace(object):
                 scope.reuse_variables()
             z = tf.concat([z_c, z_p], axis = 1)
 
-            w = self.size / (2 ** 5)
+            w = self.size // (2 ** 5)
 
             with tf.name_scope('fc8') as scope:
                 out = tcl.fully_connected(z, 1024, activation_fn=tf.nn.relu, normalizer_fn=tcl.batch_norm,
@@ -284,7 +284,7 @@ class GeneratorFace(object):
 #             if reuse:
 #                 scope.reuse_variables()
 #
-#             w = self.size / (2 ** 5)
+#             w = self.size // (2 ** 5)
 #
 #             out = fully_connected(z, 1024, use_bias=False, sn=False, scope='fc8')
 #             bn8 = ConditionalBatchNormalization(self.category)
@@ -395,7 +395,7 @@ class DiscriminatorFace(object):
                              normalizer_fn=tcl.batch_norm,
                              normalizer_params={'scale': True, 'is_training': is_training})
 
-            out = tcl.avg_pool2d(out, kernel_size=self.size / (2**5), stride=self.size / (2**5))
+            out = tcl.avg_pool2d(out, kernel_size=self.size // (2**5), stride=self.size // (2**5))
             out = tcl.flatten(out)
             out = tcl.fully_connected(out, 1024, activation_fn=lrelu, normalizer_fn=tcl.batch_norm,
                                       normalizer_params={'scale': True, 'is_training': is_training})
@@ -437,7 +437,7 @@ class DiscriminatorFaceSN(object):
 
             out = lrelu(conv(out, channels=512, kernel=3, stride=2, pad=1, sn=True, scope='conv_7'))
 
-            out = tcl.avg_pool2d(out, kernel_size=self.size / (2**5), stride=self.size / (2**5))
+            out = tcl.avg_pool2d(out, kernel_size=self.size // (2**5), stride=self.size // (2**5))
             out = tcl.flatten(out)
 
             out = lrelu(fully_connected(out, 1024, sn=True, scope='fc_8'))
@@ -979,7 +979,7 @@ class DiscriminatorSVHNSN(object):
 
             out = lrelu(conv(out, channels=256, kernel=3, stride=2, pad=1, sn=True, scope='conv_4'))
 
-            out = tcl.avg_pool2d(out, kernel_size=self.size / (2**3), stride=self.size / (2**3))
+            out = tcl.avg_pool2d(out, kernel_size=self.size // (2**3), stride=self.size // (2**3))
             out = tcl.flatten(out)
 
             out = lrelu(fully_connected(out, 1024, sn=True, scope='fc_8'))
@@ -1007,7 +1007,7 @@ class GeneratorSVHNConditionalBN(object):
             if reuse:
                 scope.reuse_variables()
 
-            w = self.size / (2 ** 4)
+            w = self.size // (2 ** 4)
            
             out = fully_connected(z, w*w*256, use_bias=False, sn=False, scope='fc8')
             out = tf.reshape(out, (-1, w, w, 256))
