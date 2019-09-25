@@ -600,7 +600,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=96)
     parser.add_argument('--mode', default='training', choices=['training', 'generation', 'inpainting', 'exchanging'])
     # add dataset choice
-    parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist'])
+    parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist', 'miniImagenet'])
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -630,6 +630,17 @@ if __name__ == '__main__':
         discriminator = DiscriminatorMnistSN(size=data.size)
 #         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+    elif args.dataset == 'miniImagenet': # TODO: design the net structure
+        data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=64)
+#         generator = GeneratorMnist(size = data.size)
+        generator = GeneratorFace(size = data.size)
+#         identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size)
+        identity = IdentityFace(data.y_dim, data.zc_dim, size = data.size)
+#         attribute = AttributeMnist(data.z_dim, size = data.size)
+        attribute = AttributeFace(data.z_dim, size = data.size)
+#         discriminator = DiscriminatorMnistSN(size=data.size)
+        discriminator = DiscriminatorFaceSN(size=data.size)
+        latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
 
 
     is_training = True
@@ -639,12 +650,12 @@ if __name__ == '__main__':
                       log_dir=os.path.join('logs', experiment_name),
                       model_dir=os.path.join('models',experiment_name))
     if mode == 'training':
-        training_iters = {'mnist':10001, 'facescrub':52001}
+        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':5001}
         wgan.train(sample_folder, training_iters=training_iters[args.dataset], batch_size = batch_size, restore = False)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
-        model_step = {'mnist':10000, 'facescrub':52000}
-        num_samples = {'mnist':5300, 'facescrub':53000}
+        model_step = {'mnist':10000, 'facescrub':52000, 'miniImagenet':5000}
+        num_samples = {'mnist':530, 'facescrub':53000, 'miniImagenet':530}
         wgan.gen_samples(model_step=model_step[args.dataset], num_samples=num_samples[args.dataset])
     elif mode == 'inpainting':
         if args.dataset == 'facescrub':
