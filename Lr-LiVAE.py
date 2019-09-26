@@ -581,7 +581,7 @@ class GMM_AE_GAN():
 #        plt.close(fig)
         for j, sample in enumerate(syn_images):
             col = (j + 1) % (bs/2 + 1)
-            row = (j + 1) / (bs/2 + 1)
+            row = (j + 1) // (bs/2 + 1)
             sample_path = os.path.join(self.model_dir, str(model_step)+'_exc', str(row) + '_' + str(col) + '.jpg')
             skimage.io.imsave(sample_path, img_as_ubyte(sample))
 
@@ -631,7 +631,7 @@ if __name__ == '__main__':
 #         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
     elif args.dataset == 'miniImagenet': # TODO: design the net structure
-        data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=64)
+        data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=args.img_size)
 #         generator = GeneratorMnist(size = data.size)
         generator = GeneratorFace(size = data.size)
 #         identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size)
