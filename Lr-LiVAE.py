@@ -207,12 +207,12 @@ class GMM_AE_GAN():
         self.is_training = is_training
         # nets
 
-        # Identity
+        # Identity (label-relevant encoder?)
         self.z_enc_c, self.means_c, self.variance_c_var, self.covariance_c = self.identity(self.X, self.is_training) # BUGFIX: problem here?
 
         # self.covariance_c = tf.exp(tf.minimum(self.log_covariance_c, np.log(100)))
 
-        # Attribute
+        # Attribute (label-irrelevant encoder?)
         self.z_mu, self.z_logvar = self.attribute(self.X, self.is_training)
 
         # Generator
@@ -621,6 +621,7 @@ if __name__ == '__main__':
         attribute = AttributeFace(data.z_dim, size = data.size)
         discriminator = DiscriminatorFaceSN(size=data.size)
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+        
     elif args.dataset == 'mnist':
         data = mnist(is_tanh=True)
         generator = GeneratorMnist(size = data.size)
@@ -630,10 +631,11 @@ if __name__ == '__main__':
         discriminator = DiscriminatorMnistSN(size=data.size)
 #         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+    
     elif args.dataset == 'miniImagenet': # TODO: design the net structure
         data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=args.img_size)
 #         generator = GeneratorMnist(size = data.size)
-        generator = GeneratorFace(size = data.size)
+        generator = GeneratorMiniImg(size = data.size)
 #         identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size)
         identity = IdentityFace(data.y_dim, data.zc_dim, size = data.size)
 #         attribute = AttributeMnist(data.z_dim, size = data.size)
