@@ -7,66 +7,66 @@ def VGG16(inputs, out_dim, keep_prob = 0.5, is_training = True, isvae = False, s
     with tf.name_scope('conv1_1') as scope:
         out = tcl.conv2d(inputs, num_outputs=64, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training':is_training})
+                         normalizer_params={'scale': True, 'is_training':is_training}) # (84,84,3)->(84,84,64)
     with tf.name_scope('conv1_2') as scope:
         out = tcl.conv2d(out, num_outputs=64, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
-    out = tcl.max_pool2d(out, kernel_size=2, stride=2)
+                         normalizer_params={'scale': True, 'is_training': is_training}) # (84,84,64)->(84,84,64)
+    out = tcl.max_pool2d(out, kernel_size=2, stride=2) # (84,84,64)->(42,42,64)
 
     with tf.name_scope('conv2_1') as scope:
         out = tcl.conv2d(out, num_outputs=128, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 42,42,64->42,42,128
     with tf.name_scope('conv2_2') as scope:
         out = tcl.conv2d(out, num_outputs=128, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
-    out = tcl.max_pool2d(out, kernel_size=2, stride=2)
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 42,42,128->42,42,128
+    out = tcl.max_pool2d(out, kernel_size=2, stride=2)  # 42,42,128->21,21,128
 
     with tf.name_scope('conv3_1') as scope:
         out = tcl.conv2d(out, num_outputs=256, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 21,21,128->21,21,256
     with tf.name_scope('conv3_2') as scope:
         out = tcl.conv2d(out, num_outputs=256, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 21,21,256->21,21,256
     with tf.name_scope('conv3_3') as scope:
         out = tcl.conv2d(out, num_outputs=256, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
-    out = tcl.max_pool2d(out, kernel_size=2, stride=2)
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 21,21,256->21,21,256
+    out = tcl.max_pool2d(out, kernel_size=2, stride=2) # 21,21,256->10,10,256
 
     with tf.name_scope('conv4_1') as scope:
         out = tcl.conv2d(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 10,10,256->10,10,512
     with tf.name_scope('conv4_2') as scope:
         out = tcl.conv2d(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 10,10,512->10,10,512
     with tf.name_scope('conv4_3') as scope:
         out = tcl.conv2d(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
-    out = tcl.max_pool2d(out, kernel_size=2, stride=2)
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 10,10,512->10,10,512
+    out = tcl.max_pool2d(out, kernel_size=2, stride=2) # 10,10,512->5,5,512
 
     with tf.name_scope('conv5_1') as scope:
         out = tcl.conv2d(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
+                         normalizer_params={'scale': True, 'is_training': is_training}) # 5,5,512->5,5,512
     with tf.name_scope('conv5_2') as scope:
         out = tcl.conv2d(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
+                         normalizer_params={'scale': True, 'is_training': is_training}) # same
     with tf.name_scope('conv5_3') as scope:
         out = tcl.conv2d(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
                          normalizer_fn=tcl.batch_norm,
-                         normalizer_params={'scale': True, 'is_training': is_training})
+                         normalizer_params={'scale': True, 'is_training': is_training}) # same
     # out = tcl.max_pool2d(out, kernel_size=2, stride=2)
 
-    out = tcl.avg_pool2d(out, kernel_size= size//(2**5), stride=size//(2**5))
+    out = tcl.avg_pool2d(out, kernel_size= size//(2**5), stride=size//(2**5)) # 5,5,512->2,2,512
 
     out = tcl.flatten(out)
 
@@ -263,7 +263,7 @@ class GeneratorFace(object):
                                  normalizer_fn=tcl.batch_norm,
                                  normalizer_params={'scale': True, 'is_training': is_training})
             with tf.name_scope('conv1_1') as scope:
-                out = tcl.conv2d_transpose(out, num_outputs=3, kernel_size=3, stride=1, activation_fn=tf.nn.tanh)
+                out = tcl.conv2d_transpose(out, num_outputs=3, kernel_size=3, stride=1, activation_fn=tf.nn.tanh) # => 84*84*3
 
             return out
 
@@ -452,8 +452,98 @@ class DiscriminatorFaceSN(object):
     def vars(self):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
 
+### MiniImagenet
+
+class GeneratorMiniImg(object):
+    def __init__(self, size = 84):
+        self.name = 'GeneratorFace'
+        self.size = size
+
+    def __call__(self, z_c, z_p, is_training = True, reuse = False):
+        # 2 fully-connected layers, followed by 6 deconv layers with 2-by-2 upsampling
+        with tf.variable_scope(self.name) as scope:
+            if reuse:
+                scope.reuse_variables()
+            z = tf.concat([z_c, z_p], axis = 1)
+
+            w = self.size // (2 ** 5)
+
+            with tf.name_scope('fc8') as scope:
+                out = tcl.fully_connected(z, 1024, activation_fn=tf.nn.relu, normalizer_fn=tcl.batch_norm,
+                                          normalizer_params={'scale': True, 'is_training': is_training})
+            # with tf.name_scope('fc7') as scope:
+            #     out = tcl.fully_connected(out, 4096, activation_fn=tf.nn.relu, normalizer_fn=tcl.batch_norm,
+            #                               normalizer_params={'scale': True, 'is_training': is_training})
+            with tf.name_scope('fc6') as scope:
+                out = tcl.fully_connected(out, w*w*512, activation_fn=tf.nn.relu, normalizer_fn=tcl.batch_norm,
+                                          normalizer_params={'scale': True, 'is_training': is_training})
+            out = tf.reshape(out, (-1, w, w, 512)) # 2,2,512
+
+            with tf.name_scope('conv5_3') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=512, kernel_size=3, stride=2, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+                paddings = tf.constant([[0, 0], [1, 0], [1, 0], [0, 0]])
+                out = tf.pad(out, paddings)# 5,5,512
+            with tf.name_scope('conv5_2') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+            with tf.name_scope('conv5_1') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+            with tf.name_scope('conv4_3') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=512, kernel_size=3, stride=2, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training}) # 10,10,512
+            with tf.name_scope('conv4_2') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=512, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+            with tf.name_scope('conv4_1') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=256, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+            with tf.name_scope('conv3_3') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=256, kernel_size=3, stride=2, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+                paddings = tf.constant([[0, 0], [1, 0], [1, 0], [0, 0]])
+                out = tf.pad(out, paddings) # 21,21,256
+                
+            with tf.name_scope('conv3_2') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=256, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+            with tf.name_scope('conv3_1') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=128, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+            with tf.name_scope('conv2_2') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=128, kernel_size=3, stride=2, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training}) # 42,42,128
+            with tf.name_scope('conv2_1') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=64, kernel_size=3, stride=1, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training})
+            with tf.name_scope('conv1_2') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=64, kernel_size=3, stride=2, activation_fn=tf.nn.relu,
+                                 normalizer_fn=tcl.batch_norm,
+                                 normalizer_params={'scale': True, 'is_training': is_training}) # 84,84,64
+            with tf.name_scope('conv1_1') as scope:
+                out = tcl.conv2d_transpose(out, num_outputs=3, kernel_size=3, stride=1, activation_fn=tf.nn.tanh)
+
+            return out
+
+    @property
+    def vars(self):
+        return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=self.name)
 
 
+    
+    
 ### MNIST FASHION MNIST
 
 class IdentityMnist(object):
