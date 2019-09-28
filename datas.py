@@ -150,17 +150,21 @@ class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
     def __call__(self,batch_size):
         if self.pointer + batch_size > self.num_examples:
             rest_num_examples = self.num_examples - self.pointer
-            paths_rest_part = self.meta['image_names'][self.pointer:self.num_examples]
-            images_rest_part = self.paths2data(paths_rest_part)
-            labels_rest_part = self.meta['image_labels'][self.pointer:self.num_examples]
+            if rest_num_examples != 0:
+                paths_rest_part = self.meta['image_names'][self.pointer:self.num_examples]
+                images_rest_part = self.paths2data(paths_rest_part)
+                labels_rest_part = self.meta['image_labels'][self.pointer:self.num_examples]
             self.shuffle_data()
             self.pointer = batch_size - rest_num_examples
             paths_new_part = self.meta['image_names'][0:self.pointer]
             images_new_part = self.paths2data(paths_new_part)
             labels_new_part = self.meta['image_labels'][0:self.pointer]
-            
-            batch_data = np.concatenate((images_rest_part, images_new_part), axis=0)
-            labels = labels_rest_part + labels_new_part
+            if rest_num_examples != 0:
+                batch_data = np.concatenate((images_rest_part, images_new_part), axis=0)
+                labels = labels_rest_part + labels_new_part
+            else:
+                batch_data = images_new_part
+                labels = labels_new_part
         
         else:
             start = self.pointer
@@ -188,6 +192,8 @@ class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
             ax.set_xticklabels([])
             ax.set_yticklabels([])
             ax.set_aspect('equal')
+            if sample.max() < 1.1:
+                sample = (sample * 255).astype(np.uint8)
             plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
         return fig
     
