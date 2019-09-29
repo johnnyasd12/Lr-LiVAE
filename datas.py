@@ -18,6 +18,13 @@ from sklearn.utils import shuffle as util_shuffle
 import skimage.io
 
 import json
+import sys
+import os
+# insert at 1, 0 is the script path (or '' in REPL)
+closer_look_path = '/media/deep3072/Data/tu/meta_few-shot/CloserLookFewShot/'
+sys.path.insert(1, closer_look_path)
+from data.datamgr import SimpleDataManager
+
 
 prefix = './Datas/'
 def get_img(img_path, crop_h, resize_h):
@@ -103,6 +110,49 @@ class mnist():
                 plt.imshow(sample.reshape(self.size, self.size), cmap='Greys_r')
         return fig
 
+class MiniImagenetV2():
+    def __init__(self, datapath, size, batch_size, aug, flag='conv', is_tanh = False, mode='all'):
+        self.X_dim = size*size*3  # for mlp
+        self.z_dim = 100
+        self.zc_dim = 32
+        self.mode = mode # 'all', 'train', 'val', 'test'
+        y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
+        self.y_dim = y_dims[mode]
+        self.size = size # for conv
+        self.channel = 3
+        
+        self.datamgr = SimpleDataManager(size, batch_size)
+        json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
+        file_path = os.path.join(datapath, json_file[self.mode])
+        self.data_loader = self.datamgr.get_data_loader(file_path , aug = aug)
+    
+    def __call__(self, batch_size): # actually this batch_size didn't count
+        i, (x,y) = next(enumerate(self.data_loader))
+        batch_data = x.numpy()
+        labels = y.numpy()
+        print('MiniImgV2')
+        print('batch_data.max() =',batch_data.max(), ', batch_data.min() =', batch_data.min())
+        return (batch_data, labels)
+    
+    def data2fig(self, samples, nr = 4, nc = 4):
+        if self.is_tanh:
+            samples = (samples + 1) / 2
+        fig = plt.figure(figsize=(4, 4))
+        gs = gridspec.GridSpec(nr, nc)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i, sample in enumerate(samples):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            if sample.max() < 1.1:
+                sample = (sample * 255).astype(np.uint8)
+            plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
+        return fig
+
+        
 class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
     def __init__(self, datapath, size, flag='conv', is_tanh = False, mode='all'):
         self.X_dim = size*size*3  # for mlp
