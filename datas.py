@@ -20,8 +20,9 @@ import skimage.io
 import json
 import sys
 import os
+import ignored_config as iconf
 # insert at 1, 0 is the script path (or '' in REPL)
-closer_look_path = '/media/deep3072/Data/tu/meta_few-shot/CloserLookFewShot/'
+closer_look_path = iconf.closer_look_path
 sys.path.insert(1, closer_look_path)
 from data.datamgr import SimpleDataManager
 
