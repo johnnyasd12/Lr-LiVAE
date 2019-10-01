@@ -17,6 +17,7 @@ import argparse
 
 from skimage import img_as_ubyte
 
+from my_utils import Timer, Timer2
 
 d_scale_factor = 0.25
 g_scale_factor = 1 - 0.75 / 2
@@ -338,6 +339,7 @@ class GMM_AE_GAN():
         for iter in range(restore_iter, training_iters):
             # learning rate
             lr_ipt = base_lr / (10 ** (iter //(self.data.num_examples // batch_size * 10)))
+            timer = Timer2('before n_gm loop', enable=False)
             for _ in range(n_gm):
                 X_b, Y_b = self.data(batch_size)
                 feed_dict = {self.X: X_b, self.z_c: sample_z(batch_size, self.zc_dim),
@@ -346,17 +348,21 @@ class GMM_AE_GAN():
                              self.lr: lr_ipt}
                 # GM_loss_curr =  self.sess.run(self.GM_loss, feed_dict=feed_dict)
                 self.sess.run([self.id_solver,self.variance_solver], feed_dict=feed_dict)
+            timer('n_gm loop end')
             feed_dict = {self.X: X_b, self.z_c: sample_z(batch_size, self.zc_dim), self.z_p: sample_z(batch_size, self.z_dim),
                          self.Y: Y_b, self.Y_rand: np.random.choice(self.y_dim, batch_size), self.lr:lr_ipt}
             KL_loss_curr = self.sess.run(self.KL_loss, feed_dict=feed_dict)
+            timer('sess.run(KL_loss) end')
             # fetch_list = [self.D_solver, self.G_solver, self.A_solver, self.C_solver, self.summary_op]
             # fetch_list = [self.G_solver, self.A_solver, self.summary_op]
             fetch_list = [self.att_solver, self.gen_solver, self.dis_solver, self.adv_solver, self.id_rec_solver, self.summary_op]
             # fetch_list += [self.D_loss, self.G_loss, self.rec_loss, self.GM_loss, self.KL_loss, self.C_loss, self.neg_mutual_info]
             fetch_list += [ self.rec_loss, self.GM_loss, self.KL_loss, self.C_loss, self.adv_loss, self.g_loss, self.d_loss]
             _, _, _, _, _, summary_str, rec_loss_curr, GM_loss_curr, KL_loss_curr, C_loss_curr, adv_loss_curr, g_loss_curr, d_loss_curr = self.sess.run(fetch_list, feed_dict=feed_dict)
+            timer('several loss end')
 
             self.summary_writer.add_summary(summary_str, iter)
+            timer('add_summary end')
 
             # new_learn_rate = self.sess.run(self.learning_rate)
             # if new_learn_rate > 0.00005:
@@ -633,7 +639,9 @@ if __name__ == '__main__':
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
     
     elif args.dataset == 'miniImagenet': # TODO: design the net structure
-        data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=args.img_size)
+#         data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=args.img_size)
+        data = MiniImagenetV3(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet/hdf5', 
+                              size=args.img_size, batch_size=batch_size, aug=True) # TODO: aug
 #         generator = GeneratorMnist(size = data.size)
         generator = GeneratorMiniImg(size = data.size)
 #         identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size)
