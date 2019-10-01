@@ -660,7 +660,7 @@ if __name__ == '__main__':
                       log_dir=os.path.join('logs', experiment_name),
                       model_dir=os.path.join('models',experiment_name))
     if mode == 'training':
-        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':5001}
+        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':52001}
         wgan.train(sample_folder, training_iters=training_iters[args.dataset], batch_size = batch_size, restore = False)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
