@@ -24,7 +24,7 @@ import ignored_config as iconf
 # insert at 1, 0 is the script path (or '' in REPL)
 closer_look_path = iconf.closer_look_path
 sys.path.insert(1, closer_look_path)
-from data.datamgr import SimpleDataManager
+from data.datamgr import SimpleDataManager, HDF5DataManager
 
 
 prefix = './Datas/'
@@ -111,7 +111,7 @@ class mnist():
                 plt.imshow(sample.reshape(self.size, self.size), cmap='Greys_r')
         return fig
 
-class MiniImagenetV2():
+class MiniImagenetV3(): # read hdf5 file
     def __init__(self, datapath, size, batch_size, aug, flag='conv', is_tanh = False, mode='all'):
         self.X_dim = size*size*3  # for mlp
         self.z_dim = 100
@@ -121,15 +121,86 @@ class MiniImagenetV2():
         self.y_dim = y_dims[mode]
         self.size = size # for conv
         self.channel = 3
+        self.is_tanh = is_tanh
+        
+        self.aug = aug
+        self.num_examples = self.y_dim*600
+        self.flag = flag
+        
+#         self.datamgr = SimpleDataManager(size, batch_size)
+        self.datamgr = HDF5DataManager(size, batch_size)
+#         json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
+        hdf5_file = mode+'-NCHW-'+str(size) # TODO: channel should be the last dimension
+        if aug:
+            hdf5_file += '-aug'
+        hdf5_file += '.h5'
+        file_path = os.path.join(datapath, hdf5_file)
+        self.data_loader = self.datamgr.get_data_loader(file_path , aug = aug)
+        self.iter_loader = enumerate(self.data_loader)
+    
+    def __call__(self, batch_size): # actually this batch_size didn't count
+        i, (x,y) = next(self.iter_loader)
+        if i==len(self.data_loader)-1:
+            self.iter_loader = enumerate(self.data_loader)
+        batch_data = x.numpy()
+        batch_data = batch_data.transpose((0,2,3,1)) # from NCHW to NHWC
+        # here x is range from 0 to 1
+        # TODO: normalize + is_tanh
+        if self.is_tanh:
+            batch_data = batch_data*2 - 1
+        
+        labels = y.numpy()
+#         print('MiniImgV3')
+#         print('batch_data.max() =',batch_data.max(), ', batch_data.min() =', batch_data.min())
+        return (batch_data, labels)
+    
+    def data2fig(self, samples, nr = 4, nc = 4):
+        if self.is_tanh:
+            samples = (samples + 1) / 2
+        fig = plt.figure(figsize=(4, 4))
+        gs = gridspec.GridSpec(nr, nc)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i, sample in enumerate(samples):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            if sample.max() < 1.1:
+                sample = (sample * 255).astype(np.uint8)
+            plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
+        return fig
+
+class MiniImagenetV2(): # use data_loader directly
+    def __init__(self, datapath, size, batch_size, aug, flag='conv', is_tanh = False, mode='all'):
+        self.X_dim = size*size*3  # for mlp
+        self.z_dim = 100
+        self.zc_dim = 32
+        self.mode = mode # 'all', 'train', 'val', 'test'
+        y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
+        self.y_dim = y_dims[mode]
+        self.size = size # for conv
+        self.channel = 3
+        self.is_tanh = is_tanh
+        
+        self.aug = aug
+        self.num_examples = self.y_dim*600
+        self.flag = flag
         
         self.datamgr = SimpleDataManager(size, batch_size)
         json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
         file_path = os.path.join(datapath, json_file[self.mode])
         self.data_loader = self.datamgr.get_data_loader(file_path , aug = aug)
+        self.iter_loader = enumerate(self.data_loader)
     
     def __call__(self, batch_size): # actually this batch_size didn't count
-        i, (x,y) = next(enumerate(self.data_loader))
+        i, (x,y) = next(self.iter_loader)
+        if i==len(self.data_loader)-1:
+            self.iter_loader = enumerate(self.data_loader)
         batch_data = x.numpy()
+        # TODO: normalize + is_tanh
+        
         labels = y.numpy()
         print('MiniImgV2')
         print('batch_data.max() =',batch_data.max(), ', batch_data.min() =', batch_data.min())
@@ -142,7 +213,8 @@ class MiniImagenetV2():
         gs = gridspec.GridSpec(nr, nc)
         gs.update(wspace=0.05, hspace=0.05)
 
-        for i, sample in enumerate(samples):
+        for i in range(samples.shape[0]):
+            sample = samples[i]
             ax = plt.subplot(gs[i])
             plt.axis('off')
             ax.set_xticklabels([])
