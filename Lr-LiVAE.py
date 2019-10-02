@@ -22,6 +22,9 @@ from my_utils import Timer, Timer2
 d_scale_factor = 0.25
 g_scale_factor = 1 - 0.75 / 2
 
+import ignored_config as iconfig
+closer_look_path = iconfig.closer_look_path
+
 
 def sample_z(m, n):
     # return np.random.uniform(-1., 1., size=[m, n])
@@ -640,7 +643,8 @@ if __name__ == '__main__':
     
     elif args.dataset == 'miniImagenet': # TODO: design the net structure
 #         data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=args.img_size)
-        data = MiniImagenetV3(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet/hdf5', 
+        data_path = os.path.join(closer_look_path, 'filelists/miniImagenet/hdf5')
+        data = MiniImagenetV3(datapath=data_path, 
                               size=args.img_size, batch_size=batch_size, aug=True) # TODO: aug
 #         generator = GeneratorMnist(size = data.size)
         generator = GeneratorMiniImg(size = data.size)
