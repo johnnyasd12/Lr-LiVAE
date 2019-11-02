@@ -220,9 +220,9 @@ class GMM_AE_GAN():
         self.z_mu, self.z_logvar = self.attribute(self.X, self.is_training)
 
         # Generator
+        # label-irrelevant features
         self.z_enc_p = sample_z_muvar(self.z_mu, self.z_logvar)
         
-        # latent discriminator
         # latent discriminator
         self.c_enc_p = self.latent_discriminator(self.z_enc_p)
         
@@ -241,7 +241,9 @@ class GMM_AE_GAN():
         self.G_sample = self.generator(self.z_sample_c, self.z_p, self.is_training, reuse=True)
 
         self.d_real = self.discriminator(self.X, self.Y_onehot, self.is_training)
+        # reconstructed fake images
         self.d_fake_dec = self.discriminator(self.G_dec, self.Y_onehot, self.is_training, reuse=True)
+        # fake images from random vector
         self.d_fake_sample = self.discriminator(self.G_sample, self.Y_rand_onehot, self.is_training, reuse=True)
 
         # GM loss
@@ -352,7 +354,9 @@ class GMM_AE_GAN():
                 # GM_loss_curr =  self.sess.run(self.GM_loss, feed_dict=feed_dict)
                 self.sess.run([self.id_solver,self.variance_solver], feed_dict=feed_dict)
             timer('n_gm loop end')
-            feed_dict = {self.X: X_b, self.z_c: sample_z(batch_size, self.zc_dim), self.z_p: sample_z(batch_size, self.z_dim),
+            feed_dict = {self.X: X_b, 
+                         self.z_c: sample_z(batch_size, self.zc_dim), 
+                         self.z_p: sample_z(batch_size, self.z_dim),
                          self.Y: Y_b, self.Y_rand: np.random.choice(self.y_dim, batch_size), self.lr:lr_ipt}
             KL_loss_curr = self.sess.run(self.KL_loss, feed_dict=feed_dict)
             timer('sess.run(KL_loss) end')
@@ -377,19 +381,41 @@ class GMM_AE_GAN():
                     iter, rec_loss_curr, GM_loss_curr, KL_loss_curr, C_loss_curr, adv_loss_curr, g_loss_curr, d_loss_curr))
 
                 if iter % 1000 == 0:
-                    samples = self.sess.run(self.G_sample, feed_dict={self.z_c: sample_z(16, self.zc_dim),
-                                                                      self.z_p: sample_z(16, self.z_dim),
-                                                                      self.Y_rand: np.random.choice(self.data.y_dim, 16)})
+#                     feed_dict = {self.z_c: sample_z(16, self.zc_dim),
+#                                   self.z_p: sample_z(16, self.z_dim),
+#                                   self.Y_rand: np.random.choice(self.data.y_dim, 16)}
+                    # use original feed_dict, just modify the batch_size
+                    feed_dict2 = {
+                            # G_sample feed_dict
+                            self.z_c: sample_z(16, self.zc_dim), 
+                            self.z_p: sample_z(16, self.z_dim), 
+                            self.Y_rand: np.random.choice(self.data.y_dim, 16), 
+                            # TODO: G_dec feed_dict
+                            # TODO: tune different latent code
+                            self.X: X_b[:16], 
+                            self.Y: Y_b[:16], 
+                                 }
+                    samples, rec_samples = self.sess.run(
+                        [self.G_sample, self.G_dec], 
+                        feed_dict=feed_dict2)
 
                     fig = self.data.data2fig(samples)
                     plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)), bbox_inches='tight')
-                    i += 1
                     plt.close(fig)
+                    
+                    rec_fig = self.data.data2fig(rec_samples)
+                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)), bbox_inches='tight')
+                    plt.close(fig)
+                    
+                    i += 1
 
                 if (iter % 1000 == 0) or iter == training_iters - 1:
                     save_path = os.path.join(self.model_dir, "model.ckpt")
                     self.saver.save(self.sess, save_path, global_step=iter)
 
+    def recons_samples(self, model_step, imgs, sample_zs):
+        pass
+    
     def gen_samples(self, model_step, num_samples):
         self.saver.restore(self.sess, os.path.join(self.model_dir, 'model.ckpt-' + str(model_step)))
         if not os.path.exists(os.path.join(self.model_dir, str(model_step))):
