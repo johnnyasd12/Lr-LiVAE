@@ -166,7 +166,7 @@ class LatentDiscriminator(object):
 
 class EncoderFace(object):
     def __init__(self, z_dim = 512, size =128):
-        self.name = 'AttributeMnist'
+        self.name = 'EncoderFace' # originally AttributeMnist, so i think its typo???
         self.z_dim = z_dim
         self.size = size
 
