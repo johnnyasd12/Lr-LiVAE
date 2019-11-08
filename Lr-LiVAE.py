@@ -689,6 +689,10 @@ if __name__ == '__main__':
 #         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
     
+    elif args.dataset == 'omniglot':
+        datapath = None
+        data = Omniglot(datapath=datapath, size=args.img_size, batch_size=batch_size)
+    
     elif args.dataset == 'miniImagenet': # TODO: design the net structure
 #         data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=args.img_size)
         data_path = os.path.join(closer_look_path, 'filelists/miniImagenet/hdf5')
