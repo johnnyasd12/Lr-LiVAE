@@ -111,6 +111,45 @@ class mnist():
                 plt.imshow(sample.reshape(self.size, self.size), cmap='Greys_r')
         return fig
 
+class Omniglot():
+    def __init__(self, datapath, size, batch_size, flag='conv', is_tanh=False, mode='train'):
+        self.X_dim = size*size*1 # for mlp
+        self.z_dim = 100
+        self.zc_dim = 32
+        self.mode = mode # 'train', 'val', 'test'
+        y_dims = {'train':None, 'val':None, 'test':None} # TODO
+        self.y_dim = y_dims[mode]
+        self.size = size # for conv
+        self.channel = 1
+        self.is_tanh = is_tanh
+        
+        n_examples = {'train':82240, 'val':None, 'test':None, 'noLatin':None} # TODO
+        self.num_examples = n_examples[mode]
+        self.flag = flag
+        
+        self.datamgr = HDF5DataManager(size, batch_size)
+        hdf5_file = mode+'-NCHW-'+str(size) # channel will go to the last dimension when __call__
+        hdf5_file += '.h5'
+        file_path = os.path.join(datapath, hdf5_file)
+        self.data_loader = self.datamgr.get_data_loader(file_path , aug = False)
+        self.iter_loader = enumerate(self.data_loader)
+        
+    def __call__(self, batch_size): # actually this batch_size didn't count
+        i, (x,y) = next(self.iter_loader)
+        if i==len(self.data_loader)-1:
+            self.iter_loader = enumerate(self.data_loader)
+        batch_data = x.numpy()
+        batch_data = batch_data.transpose((0,2,3,1)) # from NCHW to NHWC
+        # here x is range from 0 to 1
+        # TODO: normalize + is_tanh
+        if self.is_tanh:
+            batch_data = batch_data*2 - 1
+        
+        labels = y.numpy()
+#         print('MiniImgV3')
+#         print('batch_data.max() =',batch_data.max(), ', batch_data.min() =', batch_data.min())
+        return (batch_data, labels)
+
 class MiniImagenetV3(): # read hdf5 file
     def __init__(self, datapath, size, batch_size, aug, flag='conv', is_tanh = False, mode='all'):
         self.X_dim = size*size*3  # for mlp
@@ -130,7 +169,7 @@ class MiniImagenetV3(): # read hdf5 file
 #         self.datamgr = SimpleDataManager(size, batch_size)
         self.datamgr = HDF5DataManager(size, batch_size)
 #         json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
-        hdf5_file = mode+'-NCHW-'+str(size) # TODO: channel should be the last dimension
+        hdf5_file = mode+'-NCHW-'+str(size) # channel will go to the last dimension when __call__
         if aug:
             hdf5_file += '-aug'
         hdf5_file += '.h5'
