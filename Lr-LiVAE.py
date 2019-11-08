@@ -17,7 +17,7 @@ import argparse
 
 from skimage import img_as_ubyte
 
-from my_utils import Timer, Timer2
+from my_utils import Timer2
 
 d_scale_factor = 0.25
 g_scale_factor = 1 - 0.75 / 2
@@ -324,6 +324,19 @@ class GMM_AE_GAN():
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         self.saver = tf.train.Saver(max_to_keep=30)
 
+    def restore(self):
+        # TODO: restore model
+        self.sess.run(tf.global_variables_initializer())
+        ckpt = tf.train.get_checkpoint_state(self.model_dir)
+        print('Restoring from {}...'.format(ckpt.model_checkpoint_path), # is that comma typo ???
+                self.saver.restore(self.sess, ckpt.model_checkpoint_path))
+        # not sure if these lines useful
+        stem = os.path.splitext(os.path.basename(ckpt.model_checkpoint_path))[1]
+        restore_iter = int(stem.split('-')[-1])
+        i = restore_iter / 1000
+        print('done')
+        
+        
     def train(self, sample_folder, training_iters=320001, batch_size=96, restore=False, n_gm = 3, base_lr = 5e-4):
         i = 0
         self.sess.run(tf.global_variables_initializer())
@@ -331,7 +344,7 @@ class GMM_AE_GAN():
         if restore:
             try:
                 ckpt = tf.train.get_checkpoint_state(self.model_dir)
-                print('Restoring from {}...'.format(ckpt.model_checkpoint_path),
+                print('Restoring from {}...'.format(ckpt.model_checkpoint_path), # is that comma typo ???
                 self.saver.restore(self.sess, ckpt.model_checkpoint_path))
                 stem = os.path.splitext(os.path.basename(ckpt.model_checkpoint_path))[1]
                 restore_iter = int(stem.split('-')[-1])
@@ -385,6 +398,8 @@ class GMM_AE_GAN():
 #                                   self.z_p: sample_z(16, self.z_dim),
 #                                   self.Y_rand: np.random.choice(self.data.y_dim, 16)}
                     # use original feed_dict, just modify the batch_size
+                    X_samples = X_b[:16]
+                    Y_samples = Y_b[:16]
                     feed_dict2 = {
                             # G_sample feed_dict
                             self.z_c: sample_z(16, self.zc_dim), 
@@ -392,8 +407,8 @@ class GMM_AE_GAN():
                             self.Y_rand: np.random.choice(self.data.y_dim, 16), 
                             # TODO: G_dec feed_dict
                             # TODO: tune different latent code
-                            self.X: X_b[:16], 
-                            self.Y: Y_b[:16], 
+                            self.X: X_samples, 
+                            self.Y: Y_samples, 
                                  }
                     samples, rec_samples = self.sess.run(
                         [self.G_sample, self.G_dec], 
@@ -404,8 +419,12 @@ class GMM_AE_GAN():
                     plt.close(fig)
                     
                     rec_fig = self.data.data2fig(rec_samples)
-                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)), bbox_inches='tight')
-                    plt.close(fig)
+                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec'), bbox_inches='tight')
+                    plt.close(rec_fig)
+                    
+                    ori_fig = self.data.data2fig(X_samples)
+                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'ori'), bbox_inches='tight')
+                    plt.close(ori_fig)
                     
                     i += 1
 
@@ -630,16 +649,19 @@ if __name__ == '__main__':
                               or `python train.py --gpu num` if you\'re running on a multi-gpu enviroment.\
                               You need to do nothing if your\'re running on a single-gpu environment or\
                               the gpu is assigned by a resource manager program.')
-    parser.add_argument('--img_size', type=int, default=64, help='input image size')
+    parser.add_argument('--img_size', type=int, default=None, help='input image size')
     parser.add_argument('--experiment_name', default='facescrub-64')
     parser.add_argument('--batch_size', type=int, default=96)
     parser.add_argument('--mode', default='training', choices=['training', 'generation', 'inpainting', 'exchanging'])
     # add dataset choice
-    parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist', 'miniImagenet'])
+    parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist', 'miniImagenet', 'omniglot'])
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     # TODO: img_size should be different corresponding to dataset
+    if args.img_size is None:
+        img_size_dict = {'facescrub':64, 'mnist':28, 'miniImagenet':84, 'omniglot':28}
+        args.img_size = img_size_dict[args.dataset]
     img_size = args.img_size
     experiment_name = args.experiment_name
     batch_size = args.batch_size
