@@ -149,6 +149,26 @@ class Omniglot():
 #         print('MiniImgV3')
 #         print('batch_data.max() =',batch_data.max(), ', batch_data.min() =', batch_data.min())
         return (batch_data, labels)
+    
+    def data2fig(self, samples, nr = 4, nc = 4):
+        if self.is_tanh:
+            samples = (samples + 1) / 2
+        fig = plt.figure(figsize=(4, 4))
+        gs = gridspec.GridSpec(nr, nc)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i, sample in enumerate(samples):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            if sample.max() < 1.1:
+                sample = (sample * 255).astype(np.uint8)
+            plt.imshow(sample.reshape(self.size, self.size, 3), cmap='Greys_r') # self.channel = 1, but channel still 3
+        return fig
+
+
 
 class MiniImagenetV3(): # read hdf5 file
     def __init__(self, datapath, size, batch_size, aug, flag='conv', is_tanh = False, mode='all'):
