@@ -112,12 +112,12 @@ class mnist():
         return fig
 
 class Omniglot():
-    def __init__(self, datapath, size, batch_size, flag='conv', is_tanh=False, mode='train'):
+    def __init__(self, datapath, size, batch_size, flag='conv', is_tanh=False, mode='train', is_color=False):
         self.X_dim = size*size*1 # for mlp
         self.z_dim = 100
         self.zc_dim = 32
         self.mode = mode # 'train', 'val', 'test'
-        y_dims = {'train':None, 'val':None, 'test':None} # TODO
+        y_dims = {'train':4112, 'val':688, 'test':1692} # TODO
         self.y_dim = y_dims[mode]
         self.size = size # for conv
         self.channel = 1
@@ -126,6 +126,7 @@ class Omniglot():
         n_examples = {'train':82240, 'val':None, 'test':None, 'noLatin':None} # TODO
         self.num_examples = n_examples[mode]
         self.flag = flag
+        self.is_color = is_color
         
         self.datamgr = HDF5DataManager(size, batch_size)
         hdf5_file = mode+'-NCHW-'+str(size) # channel will go to the last dimension when __call__
@@ -141,6 +142,8 @@ class Omniglot():
         batch_data = x.numpy()
         batch_data = batch_data.transpose((0,2,3,1)) # from NCHW to NHWC
         # here x is range from 0 to 1
+        if not self.is_color:
+            batch_data = batch_data[:,:,:,0:1] # only first dimension
         # TODO: normalize + is_tanh
         if self.is_tanh:
             batch_data = batch_data*2 - 1
@@ -165,7 +168,9 @@ class Omniglot():
             ax.set_aspect('equal')
             if sample.max() < 1.1:
                 sample = (sample * 255).astype(np.uint8)
-            plt.imshow(sample.reshape(self.size, self.size, 3), cmap='Greys_r') # self.channel = 1, but channel still 3
+            img_sample = sample.reshape(self.size, self.size, self.channel) # 28, 28, 1
+            img_sample = np.repeat(img_sample, repeats=3, axis=2) # 28, 28, 3
+            plt.imshow(img_sample, cmap='Greys_r') # self.channel = 1, but channel still 3
         return fig
 
 

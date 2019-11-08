@@ -659,8 +659,8 @@ if __name__ == '__main__':
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     # TODO: img_size should be different corresponding to dataset
+    img_size_dict = {'facescrub':64, 'mnist':28, 'miniImagenet':84, 'omniglot':28}
     if args.img_size is None:
-        img_size_dict = {'facescrub':64, 'mnist':28, 'miniImagenet':84, 'omniglot':28}
         args.img_size = img_size_dict[args.dataset]
     img_size = args.img_size
     experiment_name = args.experiment_name
@@ -690,8 +690,16 @@ if __name__ == '__main__':
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
     
     elif args.dataset == 'omniglot':
-        datapath = None
-        data = Omniglot(datapath=datapath, size=args.img_size, batch_size=batch_size)
+        datapath = os.path.join(closer_look_path, 'filelists/omniglot/hdf5')
+        data = Omniglot(datapath=datapath, size=args.img_size, batch_size=batch_size, 
+                       is_tanh=True, flag='conv', mode='train') # train, noLatin
+        generator = GeneratorMnist(size = data.size)
+#         identity = IdentityMnist(data.y_dim, data.z_dim, size = data.size) # z_dim should be data.zc_dim ??
+        identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size) # z_dim should be data.zc_dim ??
+        attribute = AttributeMnist(data.z_dim, size = data.size)
+        discriminator = DiscriminatorMnistSN(size=data.size)
+#         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
+        latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
     
     elif args.dataset == 'miniImagenet': # TODO: design the net structure
 #         data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=args.img_size)
@@ -716,12 +724,12 @@ if __name__ == '__main__':
                       log_dir=os.path.join('logs', experiment_name),
                       model_dir=os.path.join('models',experiment_name))
     if mode == 'training':
-        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001}
+        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001, 'omniglot':52001}
         wgan.train(sample_folder, training_iters=training_iters[args.dataset], batch_size = batch_size, restore = False)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
-        model_step = {'mnist':10000, 'facescrub':52000, 'miniImagenet':300000}
-        num_samples = {'mnist':530, 'facescrub':53000, 'miniImagenet':53000}
+        model_step = {'mnist':10000, 'facescrub':52000, 'miniImagenet':300000, 'omniglot':52000}
+        num_samples = {'mnist':530, 'facescrub':53000, 'miniImagenet':53000, 'omniglot':52000}
         wgan.gen_samples(model_step=model_step[args.dataset], num_samples=num_samples[args.dataset])
     elif mode == 'inpainting':
         if args.dataset == 'facescrub':
