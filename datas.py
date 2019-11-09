@@ -117,13 +117,13 @@ class Omniglot():
         self.z_dim = 100
         self.zc_dim = 32
         self.mode = mode # 'train', 'val', 'test'
-        y_dims = {'train':4112, 'val':688, 'test':1692} # TODO
+        y_dims = {'train':4112, 'val':688, 'test':1692, 'noLatin':1597} # TODO
         self.y_dim = y_dims[mode]
         self.size = size # for conv
         self.channel = 1
         self.is_tanh = is_tanh
         
-        n_examples = {'train':82240, 'val':None, 'test':None, 'noLatin':None} # TODO
+        n_examples = {'train':4112*20, 'val':688*20, 'test':1692*20, 'noLatin':1597*20} # TODO
         self.num_examples = n_examples[mode]
         self.flag = flag
         self.is_color = is_color
