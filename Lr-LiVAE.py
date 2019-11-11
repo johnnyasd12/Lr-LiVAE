@@ -324,40 +324,48 @@ class GMM_AE_GAN():
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         self.saver = tf.train.Saver(max_to_keep=30)
 
-    def restore(self):
-        # TODO: restore model
-        self.sess.run(tf.global_variables_initializer())
-        ckpt = tf.train.get_checkpoint_state(self.model_dir)
-        print('Restoring from {}...'.format(ckpt.model_checkpoint_path), # is that comma typo ???
-                self.saver.restore(self.sess, ckpt.model_checkpoint_path))
-        # not sure if these lines useful
-        stem = os.path.splitext(os.path.basename(ckpt.model_checkpoint_path))[1]
-        restore_iter = int(stem.split('-')[-1])
-        i = restore_iter / 1000
-        print('done')
+    def restore(self, model_step):
+        self.saver.restore(self.sess, os.path.join(self.model_dir, 'model.ckpt-' + str(model_step)))
+#         self.sess.run(tf.global_variables_initializer()) # should run this line with or without restore
+#         try:
+#             ckpt = tf.train.get_checkpoint_state(self.model_dir)
+#             print('GMM_AE_GAN.model_dir:', self.model_dir)
+#             print('Restoring from {}...'.format(ckpt.model_checkpoint_path)) # is that comma typo ???
+#             self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+#             basename = os.path.basename(ckpt.model_checkpoint_path) # 'model.ckpt-<restore_iter>'
+#             stem = os.path.splitext(basename)[1] # '.ckpt-<restore_iter>'
+#             restore_iter = int(stem.split('-')[-1])
+#             print('done')
+#         except:
+#             raise 'Check your pretrained {:s}'.format(ckpt.model_checkpoint_path)
         
         
     def train(self, sample_folder, training_iters=320001, batch_size=96, restore=False, n_gm = 3, base_lr = 5e-4):
+        self.sess.run(tf.global_variables_initializer()) # should run this line with or without restore
         i = 0
-        self.sess.run(tf.global_variables_initializer())
         restore_iter = 0
         if restore:
             try:
+                # TODO: restore model failed
                 ckpt = tf.train.get_checkpoint_state(self.model_dir)
-                print('Restoring from {}...'.format(ckpt.model_checkpoint_path), # is that comma typo ???
-                self.saver.restore(self.sess, ckpt.model_checkpoint_path))
-                stem = os.path.splitext(os.path.basename(ckpt.model_checkpoint_path))[1]
+                print('GMM_AE_GAN.model_dir:', self.model_dir)
+                print('Restoring from {}...'.format(ckpt.model_checkpoint_path)) # is that comma typo ???
+                self.saver.restore(self.sess, ckpt.model_checkpoint_path)
+                basename = os.path.basename(ckpt.model_checkpoint_path) # 'model.ckpt-<restore_iter>'
+                stem = os.path.splitext(basename)[1] # '.ckpt-<restore_iter>'
                 restore_iter = int(stem.split('-')[-1])
-                i = restore_iter / 1000
                 print('done')
+                i = restore_iter / 1000
             except:
                 raise 'Check your pretrained {:s}'.format(ckpt.model_checkpoint_path)
+        
+        
         self.summary_writer = tf.summary.FileWriter(self.log_dir, self.sess.graph)
 
         for iter in range(restore_iter, training_iters):
             # learning rate
             lr_ipt = base_lr / (10 ** (iter //(self.data.num_examples // batch_size * 10)))
-            timer = Timer2('before n_gm loop', enable=False)
+#             timer = Timer2('before n_gm loop', enable=False)
             for _ in range(n_gm):
                 X_b, Y_b = self.data(batch_size)
                 feed_dict = {self.X: X_b, self.z_c: sample_z(batch_size, self.zc_dim),
@@ -366,23 +374,23 @@ class GMM_AE_GAN():
                              self.lr: lr_ipt}
                 # GM_loss_curr =  self.sess.run(self.GM_loss, feed_dict=feed_dict)
                 self.sess.run([self.id_solver,self.variance_solver], feed_dict=feed_dict)
-            timer('n_gm loop end')
+#             timer('n_gm loop end')
             feed_dict = {self.X: X_b, 
                          self.z_c: sample_z(batch_size, self.zc_dim), 
                          self.z_p: sample_z(batch_size, self.z_dim),
                          self.Y: Y_b, self.Y_rand: np.random.choice(self.y_dim, batch_size), self.lr:lr_ipt}
             KL_loss_curr = self.sess.run(self.KL_loss, feed_dict=feed_dict)
-            timer('sess.run(KL_loss) end')
+#             timer('sess.run(KL_loss) end')
             # fetch_list = [self.D_solver, self.G_solver, self.A_solver, self.C_solver, self.summary_op]
             # fetch_list = [self.G_solver, self.A_solver, self.summary_op]
             fetch_list = [self.att_solver, self.gen_solver, self.dis_solver, self.adv_solver, self.id_rec_solver, self.summary_op]
             # fetch_list += [self.D_loss, self.G_loss, self.rec_loss, self.GM_loss, self.KL_loss, self.C_loss, self.neg_mutual_info]
             fetch_list += [ self.rec_loss, self.GM_loss, self.KL_loss, self.C_loss, self.adv_loss, self.g_loss, self.d_loss]
             _, _, _, _, _, summary_str, rec_loss_curr, GM_loss_curr, KL_loss_curr, C_loss_curr, adv_loss_curr, g_loss_curr, d_loss_curr = self.sess.run(fetch_list, feed_dict=feed_dict)
-            timer('several loss end')
+#             timer('several loss end')
 
             self.summary_writer.add_summary(summary_str, iter)
-            timer('add_summary end')
+#             timer('add_summary end')
 
             # new_learn_rate = self.sess.run(self.learning_rate)
             # if new_learn_rate > 0.00005:
@@ -432,7 +440,7 @@ class GMM_AE_GAN():
                     save_path = os.path.join(self.model_dir, "model.ckpt")
                     self.saver.save(self.sess, save_path, global_step=iter)
 
-    def recons_samples(self, model_step, imgs, sample_zs):
+    def recons_samples(self, imgs, sample_zs):
         pass
     
     def gen_samples(self, model_step, num_samples):
@@ -654,12 +662,13 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=96)
     parser.add_argument('--mode', default='training', choices=['training', 'generation', 'inpainting', 'exchanging'])
     # add dataset choice
-    parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist', 'miniImagenet', 'omniglot'])
+    parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist', 'miniImagenet', 'omniglot', 'omniglot-noLatin'])
+    parser.add_argument('--restore', action='store_true', help='whether load model or not when training.')
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     # TODO: img_size should be different corresponding to dataset
-    img_size_dict = {'facescrub':64, 'mnist':28, 'miniImagenet':84, 'omniglot':28}
+    img_size_dict = {'facescrub':64, 'mnist':28, 'miniImagenet':84, 'omniglot':28, 'omniglot-noLatin':28}
     if args.img_size is None:
         args.img_size = img_size_dict[args.dataset]
     img_size = args.img_size
@@ -689,10 +698,11 @@ if __name__ == '__main__':
 #         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
     
-    elif args.dataset == 'omniglot':
+    elif 'omniglot' in args.dataset:
         datapath = os.path.join(closer_look_path, 'filelists/omniglot/hdf5')
+        split = 'noLatin' if 'noLatin' in args.dataset else 'train'
         data = Omniglot(datapath=datapath, size=args.img_size, batch_size=batch_size, 
-                       is_tanh=True, flag='conv', mode='train') # train, noLatin
+                       is_tanh=True, flag='conv', split=split) # train, noLatin
         generator = GeneratorMnist(size = data.size)
 #         identity = IdentityMnist(data.y_dim, data.z_dim, size = data.size) # z_dim should be data.zc_dim ??
         identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size) # z_dim should be data.zc_dim ??
@@ -724,12 +734,12 @@ if __name__ == '__main__':
                       log_dir=os.path.join('logs', experiment_name),
                       model_dir=os.path.join('models',experiment_name))
     if mode == 'training':
-        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001, 'omniglot':52001}
-        wgan.train(sample_folder, training_iters=training_iters[args.dataset], batch_size = batch_size, restore = False)
+        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001, 'omniglot':100001, 'omniglot-noLatin':100001}
+        wgan.train(sample_folder, training_iters=training_iters[args.dataset], batch_size = batch_size, restore = args.restore)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
-        model_step = {'mnist':10000, 'facescrub':52000, 'miniImagenet':300000, 'omniglot':52000}
-        num_samples = {'mnist':530, 'facescrub':53000, 'miniImagenet':53000, 'omniglot':52000}
+        model_step = {'mnist':10000, 'facescrub':52000, 'miniImagenet':300000, 'omniglot':100000, 'omniglot-noLatin':100000}
+        num_samples = {'mnist':530, 'facescrub':53000, 'miniImagenet':53000, 'omniglot':53000, 'omniglot-noLatin':53000}
         wgan.gen_samples(model_step=model_step[args.dataset], num_samples=num_samples[args.dataset])
     elif mode == 'inpainting':
         if args.dataset == 'facescrub':

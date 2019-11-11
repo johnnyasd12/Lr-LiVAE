@@ -112,24 +112,24 @@ class mnist():
         return fig
 
 class Omniglot():
-    def __init__(self, datapath, size, batch_size, flag='conv', is_tanh=False, mode='train', is_color=False):
+    def __init__(self, datapath, size, batch_size, flag='conv', is_tanh=False, split='train', is_color=False):
         self.X_dim = size*size*1 # for mlp
         self.z_dim = 100
         self.zc_dim = 32
-        self.mode = mode # 'train', 'val', 'test'
+        self.split = split # 'train', 'val', 'test', 'noLatin'
         y_dims = {'train':4112, 'val':688, 'test':1692, 'noLatin':1597} # TODO
-        self.y_dim = y_dims[mode]
+        self.y_dim = y_dims[split]
         self.size = size # for conv
         self.channel = 1
         self.is_tanh = is_tanh
         
         n_examples = {'train':4112*20, 'val':688*20, 'test':1692*20, 'noLatin':1597*20} # TODO
-        self.num_examples = n_examples[mode]
+        self.num_examples = n_examples[split]
         self.flag = flag
         self.is_color = is_color
         
         self.datamgr = HDF5DataManager(size, batch_size)
-        hdf5_file = mode+'-NCHW-'+str(size) # channel will go to the last dimension when __call__
+        hdf5_file = split+'-NCHW-'+str(size) # channel will go to the last dimension when __call__
         hdf5_file += '.h5'
         file_path = os.path.join(datapath, hdf5_file)
         self.data_loader = self.datamgr.get_data_loader(file_path , aug = False)
