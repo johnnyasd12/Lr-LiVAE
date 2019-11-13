@@ -133,12 +133,12 @@ class Omniglot():
         hdf5_file += '.h5'
         file_path = os.path.join(datapath, hdf5_file)
         self.data_loader = self.datamgr.get_data_loader(file_path , aug = False)
-        self.iter_loader = enumerate(self.data_loader)
+        self.enum_loader = enumerate(self.data_loader)
         
     def __call__(self, batch_size): # actually this batch_size didn't count
-        i, (x,y) = next(self.iter_loader)
+        i, (x,y) = next(self.enum_loader)
         if i==len(self.data_loader)-1:
-            self.iter_loader = enumerate(self.data_loader)
+            self.enum_loader = enumerate(self.data_loader)
         batch_data = x.numpy()
         batch_data = batch_data.transpose((0,2,3,1)) # from NCHW to NHWC
         # here x is range from 0 to 1
@@ -154,7 +154,7 @@ class Omniglot():
         return (batch_data, labels)
     
     def data2fig(self, samples, nr = 4, nc = 4):
-        if self.is_tanh:
+        if self.is_tanh: # if -1~1, then scale to 0~1
             samples = (samples + 1) / 2
         fig = plt.figure(figsize=(4, 4))
         gs = gridspec.GridSpec(nr, nc)
@@ -200,12 +200,12 @@ class MiniImagenetV3(): # read hdf5 file
         hdf5_file += '.h5'
         file_path = os.path.join(datapath, hdf5_file)
         self.data_loader = self.datamgr.get_data_loader(file_path , aug = aug)
-        self.iter_loader = enumerate(self.data_loader)
+        self.enum_loader = enumerate(self.data_loader)
     
     def __call__(self, batch_size): # actually this batch_size didn't count
-        i, (x,y) = next(self.iter_loader)
+        i, (x,y) = next(self.enum_loader)
         if i==len(self.data_loader)-1:
-            self.iter_loader = enumerate(self.data_loader)
+            self.enum_loader = enumerate(self.data_loader)
         batch_data = x.numpy()
         batch_data = batch_data.transpose((0,2,3,1)) # from NCHW to NHWC
         # here x is range from 0 to 1
@@ -256,12 +256,12 @@ class MiniImagenetV2(): # use data_loader directly
         json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
         file_path = os.path.join(datapath, json_file[self.mode])
         self.data_loader = self.datamgr.get_data_loader(file_path , aug = aug)
-        self.iter_loader = enumerate(self.data_loader)
+        self.enum_loader = enumerate(self.data_loader)
     
     def __call__(self, batch_size): # actually this batch_size didn't count
-        i, (x,y) = next(self.iter_loader)
+        i, (x,y) = next(self.enum_loader)
         if i==len(self.data_loader)-1:
-            self.iter_loader = enumerate(self.data_loader)
+            self.enum_loader = enumerate(self.data_loader)
         batch_data = x.numpy()
         # TODO: normalize + is_tanh
         
