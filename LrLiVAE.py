@@ -447,6 +447,10 @@ class GMM_AE_GAN():
                     plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec'), bbox_inches='tight')
                     plt.close(rec_fig)
                     
+                    rec2_fig = self.data.data2fig(rec_samples2)
+                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec2'), bbox_inches='tight')
+                    plt.close(rec2_fig)
+                    
                     ori_fig = self.data.data2fig(X_samples)
                     plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'ori'), bbox_inches='tight')
                     plt.close(ori_fig)
