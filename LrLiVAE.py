@@ -17,7 +17,7 @@ import argparse
 
 from skimage import img_as_ubyte
 
-from my_utils import Timer2
+# from my_utils import Timer2
 
 d_scale_factor = 0.25
 g_scale_factor = 1 - 0.75 / 2
@@ -325,7 +325,9 @@ class GMM_AE_GAN():
         self.saver = tf.train.Saver(max_to_keep=30)
 
     def restore(self, model_step):
-        self.saver.restore(self.sess, os.path.join(self.model_dir, 'model.ckpt-' + str(model_step)))
+        restore_path = os.path.join(self.model_dir, 'model.ckpt-' + str(model_step))
+        print('restore from: '+ restore_path)
+        self.saver.restore(self.sess, restore_path)
 #         self.sess.run(tf.global_variables_initializer()) # should run this line with or without restore
 #         try:
 #             ckpt = tf.train.get_checkpoint_state(self.model_dir)
@@ -368,6 +370,7 @@ class GMM_AE_GAN():
 #             timer = Timer2('before n_gm loop', enable=False)
             for _ in range(n_gm):
                 X_b, Y_b = self.data(batch_size)
+#                 print('X_batch:', X_b.min(), '~', X_b.max()) # -1~1
                 feed_dict = {self.X: X_b, self.z_c: sample_z(batch_size, self.zc_dim),
                              self.z_p: sample_z(batch_size, self.z_dim), self.Y: Y_b,
                              self.Y_rand: np.random.choice(self.y_dim, batch_size),
@@ -440,8 +443,14 @@ class GMM_AE_GAN():
                     save_path = os.path.join(self.model_dir, "model.ckpt")
                     self.saver.save(self.sess, save_path, global_step=iter)
 
-    def recons_samples(self, imgs, sample_zs):
-        pass
+    def rec_samples(self, imgs, sample_zs=None, save_fig=False):
+        # should restore first
+        if save_fig:
+            if not os.path.exists(os.path.join(self.model_dir, str(model_step)+'rec')):
+                os.makedirs(os.path.join(self.model_dir, str(model_step)+'rec'))
+        feed_dict = {self.X: imgs}
+        rec_imgs = self.sess.run(self.G_dec, feed_dict=feed_dict)
+        return rec_imgs
     
     def gen_samples(self, model_step, num_samples):
         self.saver.restore(self.sess, os.path.join(self.model_dir, 'model.ckpt-' + str(model_step)))
@@ -734,7 +743,7 @@ if __name__ == '__main__':
                       log_dir=os.path.join('logs', experiment_name),
                       model_dir=os.path.join('models',experiment_name))
     if mode == 'training':
-        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001, 'omniglot':100001, 'omniglot-noLatin':100001}
+        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001, 'omniglot':200001, 'omniglot-noLatin':200001}
         wgan.train(sample_folder, training_iters=training_iters[args.dataset], batch_size = batch_size, restore = args.restore)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
