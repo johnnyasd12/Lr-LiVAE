@@ -203,7 +203,7 @@ class GMM_AE_GAN():
         self.X = tf.placeholder(tf.float32, shape=[None, self.size, self.size, self.channel], name='X')
         self.z_c = tf.placeholder(tf.float32, shape=[None, self.zc_dim], name='z_c')
         self.z_p = tf.placeholder(tf.float32, shape=[None, self.z_dim], name='z_p')
-        self.z_p2 = tf.placeholder(tf.float32, shape=[None, self.z_dim], name='z_p2')
+#         self.z_p2 = tf.placeholder(tf.float32, shape=[None, self.z_dim], name='z_p2')
         self.Y = tf.placeholder(tf.int32, shape=[None], name='Y')
         self.Y_onehot = tf.one_hot(self.Y, self.y_dim)
         self.Y_rand = tf.placeholder(tf.int32, shape=[None], name='Y_rand')
@@ -223,6 +223,7 @@ class GMM_AE_GAN():
         # Generator
         # label-irrelevant features
         self.z_enc_p = sample_z_muvar(self.z_mu, self.z_logvar)
+        self.z_enc_p2 = sample_z_muvar(self.z_mu, self.z_logvar*1.2)
         
         # latent discriminator
         self.c_enc_p = self.latent_discriminator(self.z_enc_p)
@@ -231,7 +232,7 @@ class GMM_AE_GAN():
         self.G_dec = self.generator(self.z_enc_c, self.z_enc_p, self.is_training)
         
         # reconstructed image that use random label-irrelevant latent vector
-        self.G_dec2 = self.generator(self.z_enc_c, self.z_p2, self.is_training, reuse=True)
+        self.G_dec2 = self.generator(self.z_enc_c, self.z_enc_p2, self.is_training, reuse=True)
 
 #        self.z_sample_c = self.z_c * tf.sqrt(tf.gather(self.covariance_c, self.Y_rand)) + tf.gather(self.means_c, self.Y_rand)
         # to debug
@@ -378,12 +379,12 @@ class GMM_AE_GAN():
                 n_data = Y_b.shape[0] # not necessary to equal batch_size, BUGFIX
 #                 print('Y_b.shape:', Y_b.shape)
 #                 print('X_batch:', X_b.min(), '~', X_b.max()) # -1~1
-                z_p2_useless = np.zeros((n_data, self.z_dim))
+#                 z_p2_useless = np.zeros((n_data, self.z_dim))
                 feed_dict = {self.X: X_b, self.z_c: sample_z(n_data, self.zc_dim),
                              self.z_p: sample_z(n_data, self.z_dim), self.Y: Y_b,
                              self.Y_rand: np.random.choice(self.y_dim, n_data),
                              self.lr: lr_ipt, 
-                             self.z_p2: z_p2_useless, 
+#                              self.z_p2: z_p2_useless, 
                             }
                 # GM_loss_curr =  self.sess.run(self.GM_loss, feed_dict=feed_dict)
                 self.sess.run([self.id_solver,self.variance_solver], feed_dict=feed_dict)
@@ -393,7 +394,7 @@ class GMM_AE_GAN():
                          self.z_p: sample_z(n_data, self.z_dim),
                          self.Y: Y_b, self.Y_rand: np.random.choice(self.y_dim, n_data), 
                          self.lr:lr_ipt, 
-                         self.z_p2: z_p2_useless, 
+#                          self.z_p2: z_p2_useless, 
                         }
             KL_loss_curr = self.sess.run(self.KL_loss, feed_dict=feed_dict)
 #             timer('sess.run(KL_loss) end')
@@ -428,7 +429,7 @@ class GMM_AE_GAN():
                             # G_sample feed_dict
                             self.z_c: sample_z(16, self.zc_dim), 
                             self.z_p: sample_z(16, self.z_dim), 
-                            self.z_p2: sample_z(16, self.z_dim, std=1.2), #sample_z(), 
+#                             self.z_p2: sample_z(16, self.z_dim, std=1.2), #sample_z(), 
                             self.Y_rand: np.random.choice(self.data.y_dim, 16), 
                             self.X: X_samples, 
                             self.Y: Y_samples, 
