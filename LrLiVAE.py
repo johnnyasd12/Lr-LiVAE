@@ -223,7 +223,9 @@ class GMM_AE_GAN():
         # Generator
         # label-irrelevant features
         self.z_enc_p = sample_z_muvar(self.z_mu, self.z_logvar)
-        self.z_enc_p2 = sample_z_muvar(self.z_mu, self.z_logvar*1.2)
+        # to adjust decoded image, different label-irrelevant features
+        self.lambda_zlogvar = tf.placeholder(tf.float32, shape=(), name='lambda_zlogvar')
+        self.z_enc_p2 = sample_z_muvar(self.z_mu, self.z_logvar*self.lambda_zlogvar)
         
         # latent discriminator
         self.c_enc_p = self.latent_discriminator(self.z_enc_p)
@@ -369,6 +371,7 @@ class GMM_AE_GAN():
         
         self.summary_writer = tf.summary.FileWriter(self.log_dir, self.sess.graph)
 
+        lambda_zlogvar = 2.
         for iter in range(restore_iter, training_iters):
             # learning rate
             lr_ipt = base_lr / (10 ** (iter //(self.data.num_examples // batch_size * 10)))
@@ -384,6 +387,7 @@ class GMM_AE_GAN():
                              self.z_p: sample_z(n_data, self.z_dim), self.Y: Y_b,
                              self.Y_rand: np.random.choice(self.y_dim, n_data),
                              self.lr: lr_ipt, 
+                             self.lambda_zlogvar: lambda_zlogvar, 
 #                              self.z_p2: z_p2_useless, 
                             }
                 # GM_loss_curr =  self.sess.run(self.GM_loss, feed_dict=feed_dict)
@@ -394,6 +398,7 @@ class GMM_AE_GAN():
                          self.z_p: sample_z(n_data, self.z_dim),
                          self.Y: Y_b, self.Y_rand: np.random.choice(self.y_dim, n_data), 
                          self.lr:lr_ipt, 
+                         self.lambda_zlogvar: lambda_zlogvar, 
 #                          self.z_p2: z_p2_useless, 
                         }
             KL_loss_curr = self.sess.run(self.KL_loss, feed_dict=feed_dict)
@@ -430,6 +435,7 @@ class GMM_AE_GAN():
                             self.z_c: sample_z(16, self.zc_dim), 
                             self.z_p: sample_z(16, self.z_dim), 
 #                             self.z_p2: sample_z(16, self.z_dim, std=1.2), #sample_z(), 
+                            self.lambda_zlogvar: lambda_zlogvar, 
                             self.Y_rand: np.random.choice(self.data.y_dim, 16), 
                             self.X: X_samples, 
                             self.Y: Y_samples, 
