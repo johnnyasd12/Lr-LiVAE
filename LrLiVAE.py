@@ -468,13 +468,13 @@ class GMM_AE_GAN():
                     save_path = os.path.join(self.model_dir, "model.ckpt")
                     self.saver.save(self.sess, save_path, global_step=iter)
 
-    def rec_samples(self, imgs, sample_zs=None, save_fig=False):
-        # should restore first
-        if save_fig:
+    def rec_samples(self, imgs, lambda_zlogvar=1, save_fig=False):
+        # should restore or train before calling this function
+        if save_fig: # TODO: save figure
             if not os.path.exists(os.path.join(self.model_dir, str(model_step)+'rec')):
                 os.makedirs(os.path.join(self.model_dir, str(model_step)+'rec'))
-        feed_dict = {self.X: imgs}
-        rec_imgs = self.sess.run(self.G_dec, feed_dict=feed_dict)
+        feed_dict = {self.X: imgs, self.lambda_zlogvar: lambda_zlogvar}
+        rec_imgs = self.sess.run(self.G_dec2, feed_dict=feed_dict)
         return rec_imgs
     
     def gen_samples(self, model_step, num_samples):
