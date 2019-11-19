@@ -180,6 +180,9 @@ class GMM_AE_GAN():
         if not os.path.exists(model_dir):
             os.makedirs(model_dir)
 
+        # to fix bug (generate all the same), seems not work lollllllll fk
+#         tf.reset_default_graph()
+        
         self.generator = generator
         self.identity = identity
         self.attribute = attribute
@@ -468,13 +471,51 @@ class GMM_AE_GAN():
                     save_path = os.path.join(self.model_dir, "model.ckpt")
                     self.saver.save(self.sess, save_path, global_step=iter)
 
-    def rec_samples(self, imgs, lambda_zlogvar=1, save_fig=False):
+    def check_weights(self, name=None, show=True):
+        variables_names = [v.name for v in tf.trainable_variables()] # TODO: not trainable????
+        values = self.sess.run(variables_names)
+        print('='*10, 'checking weights', '='*10)
+        found = False
+        for i, (k, v) in enumerate(zip(variables_names, values)):
+            if name is None:
+                print("Variable: ", k)
+                print("Shape: ", v.shape)
+                if show:
+                    print(v)
+            else:
+                if name in k:
+                    found = True
+                    print(k)
+                    if show:
+                        print(v)
+        if name is not None and found==False:
+            raise 'no matched trainable variable name.'
+    
+#     def rec_samples(self, imgs, lambda_zlogvar=1, save_fig=False):
+    def rec_samples(self, imgs, lambda_zlogvar=1):
         # should restore or train before calling this function
-        if save_fig: # TODO: save figure
-            if not os.path.exists(os.path.join(self.model_dir, str(model_step)+'rec')):
-                os.makedirs(os.path.join(self.model_dir, str(model_step)+'rec'))
+#         if save_fig: # TODO: save figure
+#             if not os.path.exists(os.path.join(self.model_dir, str(model_step)+'rec')):
+#                 os.makedirs(os.path.join(self.model_dir, str(model_step)+'rec'))
+        from my_utils import describe
+        describe(imgs, 'LrLiVAE/rec_samples/imgs')
         feed_dict = {self.X: imgs, self.lambda_zlogvar: lambda_zlogvar}
-        rec_imgs = self.sess.run(self.G_dec2, feed_dict=feed_dict)
+        
+        
+        # TODO:
+        rec_imgs, means_c, variance_c_var, covariance_c = self.sess.run(
+            [self.G_dec2, self.means_c, self.variance_c_var, self.covariance_c], 
+           feed_dict=feed_dict)
+#         rec_imgs = self.sess.run(self.G_dec2, feed_dict=feed_dict)
+        describe(rec_imgs, 'LrLiVAE/rec_samples/rec_imgs')
+#         describe(means_c, 'LrLiVAE/rec_samples/means_c')
+#         describe(variance_c_var, 'LrLiVAE/rec_samples/variance_c_var')
+#         describe(covariance_c, 'LrLiVAE/rec_samples/covariance_c')
+#         self.check_weights('Identity', show=False)
+#         self.check_weights('IdentityMnist/base_layers/fully_connected_1/weights:0', show=True)
+#         self.check_weights('IdentityMnist/base_layers/fully_connected/BatchNorm/beta:0', show=True)
+#         self.check_weights('IdentityMnist/base_layers/fully_connected/BatchNorm/gamma:0', show=True)
+        
         return rec_imgs
     
     def gen_samples(self, model_step, num_samples):
