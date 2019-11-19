@@ -698,7 +698,7 @@ class AttributeMnist(object):
 
 class EncoderMnist(object):
     def __init__(self, z_dim = 100, size =28):
-        self.name = 'AttributeMnist'
+        self.name = 'EncoderMnist' # BUGFIX: TODO: typo??? originally 'AttributeMnist'
         self.z_dim = z_dim
         self.size = size
 
@@ -782,7 +782,7 @@ class GeneratorMnist(object):
 
 class ClassifierMnist(object):
     def __init__(self, y_dim = 530, z_dim = 256, size = 64):
-        self.name = 'IdentityMnist'
+        self.name = 'ClassifierMnist' # BUGFIX: TODO: typo??? originally 'IdentityMnist'
         self.z_dim = z_dim
         self.y_dim = y_dim
         self.size = size
