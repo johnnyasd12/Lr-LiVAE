@@ -5,6 +5,7 @@ from glob import glob
 import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
+# mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
@@ -24,7 +25,7 @@ import ignored_config as iconf
 # insert at 1, 0 is the script path (or '' in REPL)
 closer_look_path = iconf.closer_look_path
 sys.path.insert(1, closer_look_path)
-from data.datamgr import SimpleDataManager, HDF5DataManager
+
 
 
 prefix = './Datas/'
@@ -113,6 +114,8 @@ class mnist():
 
 class Omniglot():
     def __init__(self, datapath, size, batch_size, flag='conv', is_tanh=False, split='train', is_color=False):
+        # to avoid circular import
+        from data.datamgr import HDF5DataManager#, SimpleDataManager, 
         self.X_dim = size*size*1 # for mlp
         self.z_dim = 100
         self.zc_dim = 32
@@ -153,7 +156,7 @@ class Omniglot():
 #         print('batch_data.max() =',batch_data.max(), ', batch_data.min() =', batch_data.min())
         return (batch_data, labels)
     
-    def data2fig(self, samples, nr = 4, nc = 4):
+    def data2fig(self, samples, nr = 4, nc = 4, save_path = None):
         if self.is_tanh: # if -1~1, then scale to 0~1
             samples = (samples + 1) / 2
         fig = plt.figure(figsize=(4, 4))
@@ -171,12 +174,34 @@ class Omniglot():
             img_sample = sample.reshape(self.size, self.size, self.channel) # 28, 28, 1
             img_sample = np.repeat(img_sample, repeats=3, axis=2) # 28, 28, 3
             plt.imshow(img_sample, cmap='Greys_r') # self.channel = 1, but channel still 3
+        if save_path:
+            fig.savefig(save_path)
+            print('finish save image to:', save_path)
         return fig
+    
+    def sample2fig2jpg(self, sample, dst_dir, filename):
+        if self.is_tanh:
+            sample = (sample + 1) / 2
+        
+        img_path = os.path.join(dst_dir, filename)
+        skimage.io.imsave(img_path, sample)
+        print('finish save image to:', img_path)
+    
+#     def data2fig2jpg(self, samples, labels, dst_dir):
+#         # draw all certain class data in samples
+# #         dst_dir = '/media/sist316/KINGSTON/generated_images/cifar-real'
+#         if self.is_tanh:
+#             samples = (samples + 1) / 2
+#         for i, sample in enumerate(samples):
+#             img_path = os.path.join(dst_dir, str(labels[i]) + '_' + str(i) + '.jpg')
+#             skimage.io.imsave(img_path, sample)
 
 
 
 class MiniImagenetV3(): # read hdf5 file
     def __init__(self, datapath, size, batch_size, aug, flag='conv', is_tanh = False, mode='all'):
+        # to avoid circular import
+        from data.datamgr import HDF5DataManager#, SimpleDataManager, 
         self.X_dim = size*size*3  # for mlp
         self.z_dim = 100
         self.zc_dim = 32
@@ -236,153 +261,153 @@ class MiniImagenetV3(): # read hdf5 file
             plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
         return fig
 
-class MiniImagenetV2(): # use data_loader directly
-    def __init__(self, datapath, size, batch_size, aug, flag='conv', is_tanh = False, mode='all'):
-        self.X_dim = size*size*3  # for mlp
-        self.z_dim = 100
-        self.zc_dim = 32
-        self.mode = mode # 'all', 'train', 'val', 'test'
-        y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
-        self.y_dim = y_dims[mode]
-        self.size = size # for conv
-        self.channel = 3
-        self.is_tanh = is_tanh
+# class MiniImagenetV2(): # use data_loader directly
+#     def __init__(self, datapath, size, batch_size, aug, flag='conv', is_tanh = False, mode='all'):
+#         self.X_dim = size*size*3  # for mlp
+#         self.z_dim = 100
+#         self.zc_dim = 32
+#         self.mode = mode # 'all', 'train', 'val', 'test'
+#         y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
+#         self.y_dim = y_dims[mode]
+#         self.size = size # for conv
+#         self.channel = 3
+#         self.is_tanh = is_tanh
         
-        self.aug = aug
-        self.num_examples = self.y_dim*600
-        self.flag = flag
+#         self.aug = aug
+#         self.num_examples = self.y_dim*600
+#         self.flag = flag
         
-        self.datamgr = SimpleDataManager(size, batch_size)
-        json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
-        file_path = os.path.join(datapath, json_file[self.mode])
-        self.data_loader = self.datamgr.get_data_loader(file_path , aug = aug)
-        self.enum_loader = enumerate(self.data_loader)
+#         self.datamgr = SimpleDataManager(size, batch_size)
+#         json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
+#         file_path = os.path.join(datapath, json_file[self.mode])
+#         self.data_loader = self.datamgr.get_data_loader(file_path , aug = aug)
+#         self.enum_loader = enumerate(self.data_loader)
     
-    def __call__(self, batch_size): # actually this batch_size didn't count
-        i, (x,y) = next(self.enum_loader)
-        if i==len(self.data_loader)-1:
-            self.enum_loader = enumerate(self.data_loader)
-        batch_data = x.numpy()
-        # TODO: normalize + is_tanh
+#     def __call__(self, batch_size): # actually this batch_size didn't count
+#         i, (x,y) = next(self.enum_loader)
+#         if i==len(self.data_loader)-1:
+#             self.enum_loader = enumerate(self.data_loader)
+#         batch_data = x.numpy()
+#         # TODO: normalize + is_tanh
         
-        labels = y.numpy()
-        print('MiniImgV2')
-        print('batch_data.max() =',batch_data.max(), ', batch_data.min() =', batch_data.min())
-        return (batch_data, labels)
+#         labels = y.numpy()
+#         print('MiniImgV2')
+#         print('batch_data.max() =',batch_data.max(), ', batch_data.min() =', batch_data.min())
+#         return (batch_data, labels)
     
-    def data2fig(self, samples, nr = 4, nc = 4):
-        if self.is_tanh:
-            samples = (samples + 1) / 2
-        fig = plt.figure(figsize=(4, 4))
-        gs = gridspec.GridSpec(nr, nc)
-        gs.update(wspace=0.05, hspace=0.05)
+#     def data2fig(self, samples, nr = 4, nc = 4):
+#         if self.is_tanh:
+#             samples = (samples + 1) / 2
+#         fig = plt.figure(figsize=(4, 4))
+#         gs = gridspec.GridSpec(nr, nc)
+#         gs.update(wspace=0.05, hspace=0.05)
 
-        for i in range(samples.shape[0]):
-            sample = samples[i]
-            ax = plt.subplot(gs[i])
-            plt.axis('off')
-            ax.set_xticklabels([])
-            ax.set_yticklabels([])
-            ax.set_aspect('equal')
-            if sample.max() < 1.1:
-                sample = (sample * 255).astype(np.uint8)
-            plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
-        return fig
+#         for i in range(samples.shape[0]):
+#             sample = samples[i]
+#             ax = plt.subplot(gs[i])
+#             plt.axis('off')
+#             ax.set_xticklabels([])
+#             ax.set_yticklabels([])
+#             ax.set_aspect('equal')
+#             if sample.max() < 1.1:
+#                 sample = (sample * 255).astype(np.uint8)
+#             plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
+#         return fig
 
         
-class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
-    def __init__(self, datapath, size, flag='conv', is_tanh = False, mode='all'):
-        self.X_dim = size*size*3  # for mlp
-        self.z_dim = 100
-        self.zc_dim = 32
-        self.mode = mode # 'all', 'train', 'val', 'test'
-        y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
-        self.y_dim = y_dims[mode]
-        self.size = size # for conv
+# class MiniImagenet(): # implement after Cifar10 or FaceScrub is tested
+#     def __init__(self, datapath, size, flag='conv', is_tanh = False, mode='all'):
+#         self.X_dim = size*size*3  # for mlp
+#         self.z_dim = 100
+#         self.zc_dim = 32
+#         self.mode = mode # 'all', 'train', 'val', 'test'
+#         y_dims = {'all':100, 'train':64, 'val':16, 'test':16}
+#         self.y_dim = y_dims[mode]
+#         self.size = size # for conv
 
-        self.channel = 3
-        self.meta = self.datapath2meta(datapath)
-        self.num_examples = self.y_dim*600
+#         self.channel = 3
+#         self.meta = self.datapath2meta(datapath)
+#         self.num_examples = self.y_dim*600
 
-        self.flag = flag
-        self.is_tanh = is_tanh
+#         self.flag = flag
+#         self.is_tanh = is_tanh
         
-        self.pointer = 0
-        self.shuffle_data()
+#         self.pointer = 0
+#         self.shuffle_data()
     
-    def datapath2meta(self, datapath):
-        json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
-        datapath = os.path.join(datapath, json_file[self.mode])
-        with open(datapath, 'r') as f:
-            meta = json.load(f)
-        return meta
+#     def datapath2meta(self, datapath):
+#         json_file = dict(all = 'all.json', train = 'base.json', val = 'val.json', test = 'novel.json')
+#         datapath = os.path.join(datapath, json_file[self.mode])
+#         with open(datapath, 'r') as f:
+#             meta = json.load(f)
+#         return meta
     
-    def paths2data(self, paths):
-        imgs = []
-        for img_path in paths:
-#             image_path = self.meta['image_names'][i]
-            img = Image.open(img_path).convert('RGB')
-            img = img.resize((self.size, self.size))
-            img = np.asarray(img)
-            img = img[np.newaxis, ...]
-            imgs.append(img)
-        imgs = np.concatenate(imgs, axis=0)
-        return imgs
+#     def paths2data(self, paths):
+#         imgs = []
+#         for img_path in paths:
+# #             image_path = self.meta['image_names'][i]
+#             img = Image.open(img_path).convert('RGB')
+#             img = img.resize((self.size, self.size))
+#             img = np.asarray(img)
+#             img = img[np.newaxis, ...]
+#             imgs.append(img)
+#         imgs = np.concatenate(imgs, axis=0)
+#         return imgs
     
-    def shuffle_data(self):
-        indices = np.random.permutation(self.num_examples)
-        self.meta['image_labels'] = np.asarray(self.meta['image_labels'])[indices]
-        self.meta['image_names'] = np.asarray(self.meta['image_names'])[indices]
+#     def shuffle_data(self):
+#         indices = np.random.permutation(self.num_examples)
+#         self.meta['image_labels'] = np.asarray(self.meta['image_labels'])[indices]
+#         self.meta['image_names'] = np.asarray(self.meta['image_names'])[indices]
     
-    def __call__(self,batch_size):
-        if self.pointer + batch_size > self.num_examples:
-            rest_num_examples = self.num_examples - self.pointer
-            if rest_num_examples != 0:
-                paths_rest_part = self.meta['image_names'][self.pointer:self.num_examples]
-                images_rest_part = self.paths2data(paths_rest_part)
-                labels_rest_part = self.meta['image_labels'][self.pointer:self.num_examples]
-            self.shuffle_data()
-            self.pointer = batch_size - rest_num_examples
-            paths_new_part = self.meta['image_names'][0:self.pointer]
-            images_new_part = self.paths2data(paths_new_part)
-            labels_new_part = self.meta['image_labels'][0:self.pointer]
-            if rest_num_examples != 0:
-                batch_data = np.concatenate((images_rest_part, images_new_part), axis=0)
-                labels = labels_rest_part + labels_new_part
-            else:
-                batch_data = images_new_part
-                labels = labels_new_part
+#     def __call__(self,batch_size):
+#         if self.pointer + batch_size > self.num_examples:
+#             rest_num_examples = self.num_examples - self.pointer
+#             if rest_num_examples != 0:
+#                 paths_rest_part = self.meta['image_names'][self.pointer:self.num_examples]
+#                 images_rest_part = self.paths2data(paths_rest_part)
+#                 labels_rest_part = self.meta['image_labels'][self.pointer:self.num_examples]
+#             self.shuffle_data()
+#             self.pointer = batch_size - rest_num_examples
+#             paths_new_part = self.meta['image_names'][0:self.pointer]
+#             images_new_part = self.paths2data(paths_new_part)
+#             labels_new_part = self.meta['image_labels'][0:self.pointer]
+#             if rest_num_examples != 0:
+#                 batch_data = np.concatenate((images_rest_part, images_new_part), axis=0)
+#                 labels = labels_rest_part + labels_new_part
+#             else:
+#                 batch_data = images_new_part
+#                 labels = labels_new_part
         
-        else:
-            start = self.pointer
-            self.pointer += batch_size
-            paths = self.meta['image_names'][start:self.pointer]
-            batch_data = self.paths2data(paths)
-            labels = self.meta['image_labels'][start:self.pointer]
+#         else:
+#             start = self.pointer
+#             self.pointer += batch_size
+#             paths = self.meta['image_names'][start:self.pointer]
+#             batch_data = self.paths2data(paths)
+#             labels = self.meta['image_labels'][start:self.pointer]
         
-        batch_data = batch_data/255.
-        if self.is_tanh:
-            batch_data = batch_data*2 - 1
+#         batch_data = batch_data/255.
+#         if self.is_tanh:
+#             batch_data = batch_data*2 - 1
         
-        return batch_data, labels
+#         return batch_data, labels
     
-    def data2fig(self, samples, nr = 4, nc = 4):
-        if self.is_tanh:
-            samples = (samples + 1) / 2
-        fig = plt.figure(figsize=(4, 4))
-        gs = gridspec.GridSpec(nr, nc)
-        gs.update(wspace=0.05, hspace=0.05)
+#     def data2fig(self, samples, nr = 4, nc = 4):
+#         if self.is_tanh:
+#             samples = (samples + 1) / 2
+#         fig = plt.figure(figsize=(4, 4))
+#         gs = gridspec.GridSpec(nr, nc)
+#         gs.update(wspace=0.05, hspace=0.05)
 
-        for i, sample in enumerate(samples):
-            ax = plt.subplot(gs[i])
-            plt.axis('off')
-            ax.set_xticklabels([])
-            ax.set_yticklabels([])
-            ax.set_aspect('equal')
-            if sample.max() < 1.1:
-                sample = (sample * 255).astype(np.uint8)
-            plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
-        return fig
+#         for i, sample in enumerate(samples):
+#             ax = plt.subplot(gs[i])
+#             plt.axis('off')
+#             ax.set_xticklabels([])
+#             ax.set_yticklabels([])
+#             ax.set_aspect('equal')
+#             if sample.max() < 1.1:
+#                 sample = (sample * 255).astype(np.uint8)
+#             plt.imshow(sample.reshape(self.size, self.size, self.channel), cmap='Greys_r')
+#         return fig
     
 class Cifar10():
     def __init__(self, flag='conv', is_tanh = False, test_batch = False, all_images = True):
@@ -484,6 +509,7 @@ class Cifar10():
         return fig
 
     def data2fig2jpg(self, samples, labels, y = 1):
+        # draw all certain class data in samples
         dst_dir = '/media/sist316/KINGSTON/generated_images/cifar-real'
         num = 0
         if self.is_tanh:
