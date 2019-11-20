@@ -302,19 +302,36 @@ class GMM_AE_GAN():
         # Optimizer
         self.lr = tf.placeholder(dtype=tf.float32, shape=[])
         self.log_vars.append(("lr", self.lr))
-        # G_opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
-        id_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
-        variance_opt = tf.train.AdamOptimizer(self.lr, beta1=0, beta2=0.9)
-        id_rec_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
-        gen_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
-        dis_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
-        att_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
-        adv_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
-        # A_opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+        
+        
+        
+        # TODO: put opt in control_dependencies
+#         # G_opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+#         id_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+#         variance_opt = tf.train.AdamOptimizer(self.lr, beta1=0, beta2=0.9)
+#         id_rec_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+#         gen_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+#         dis_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+#         att_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+#         adv_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+#         # A_opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
 
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
 
+            
+            
+            # TODO: which is better?
+            # G_opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+            id_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+            variance_opt = tf.train.AdamOptimizer(self.lr, beta1=0, beta2=0.9)
+            id_rec_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+            gen_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+            dis_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+            att_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+            adv_opt = tf.train.AdamOptimizer(5e-4, beta1=0, beta2=0.9)
+            # A_opt = tf.train.RMSPropOptimizer(learning_rate=self.learning_rate)
+            
             # self.G_solver = G_opt.minimize(self.lambda2 * self.rec_loss ,
             #                                var_list=self.generator.vars)
             self.id_solver = id_opt.minimize(self.GM_loss, var_list=self.identity.base_layers_vars+[self.means_c])
@@ -374,7 +391,7 @@ class GMM_AE_GAN():
         
         self.summary_writer = tf.summary.FileWriter(self.log_dir, self.sess.graph)
 
-        lambda_zlogvar = 2.
+        lambda_zlogvar = 2. # this is useless
         for iter in range(restore_iter, training_iters):
             # learning rate
             lr_ipt = base_lr / (10 ** (iter //(self.data.num_examples // batch_size * 10)))
@@ -471,6 +488,19 @@ class GMM_AE_GAN():
                     save_path = os.path.join(self.model_dir, "model.ckpt")
                     self.saver.save(self.sess, save_path, global_step=iter)
 
+    # TODO: set_is_training
+#     def set_is_training(is_training): # this won't work
+#         if self.is_training == is_training:
+#             print('Warning: LrLiVAE.is_training is already %s, so not changed.'%(str(is_training)))
+        
+#         self.is_training = is_training
+        
+#         self.generator.is_training = is_training
+#         self.identity.is_training = is_training
+#         self.attribute.is_training = is_training
+#         self.discriminator.is_training = is_training
+#         self.latent_discriminator.is_training = is_training
+        
     def check_weights(self, name=None, show=True):
         variables_names = [v.name for v in tf.trainable_variables()] # TODO: not trainable????
         values = self.sess.run(variables_names)
