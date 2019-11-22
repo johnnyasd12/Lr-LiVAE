@@ -177,7 +177,7 @@ class Omniglot():
         if save_path:
             fig.savefig(save_path)
             print('finish save image to:', save_path)
-        return fig
+        return fig # should explicitly close fig
     
     def sample2fig2jpg(self, sample, dst_dir, filename):
         if self.is_tanh:

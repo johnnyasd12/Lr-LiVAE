@@ -25,6 +25,7 @@ g_scale_factor = 1 - 0.75 / 2
 import ignored_config as iconfig
 closer_look_path = iconfig.closer_look_path
 
+DEBUG = False
 
 def sample_z(m, n, std=1):
     # return np.random.uniform(-1., 1., size=[m, n])
@@ -527,24 +528,23 @@ class GMM_AE_GAN():
 #         if save_fig: # TODO: save figure
 #             if not os.path.exists(os.path.join(self.model_dir, str(model_step)+'rec')):
 #                 os.makedirs(os.path.join(self.model_dir, str(model_step)+'rec'))
-        from my_utils import describe
-        describe(imgs, 'LrLiVAE/rec_samples/imgs')
         feed_dict = {self.X: imgs, self.lambda_zlogvar: lambda_zlogvar}
-        
-        
-        # TODO:
         rec_imgs, means_c, variance_c_var, covariance_c = self.sess.run(
             [self.G_dec2, self.means_c, self.variance_c_var, self.covariance_c], 
            feed_dict=feed_dict)
 #         rec_imgs = self.sess.run(self.G_dec2, feed_dict=feed_dict)
-        describe(rec_imgs, 'LrLiVAE/rec_samples/rec_imgs')
-#         describe(means_c, 'LrLiVAE/rec_samples/means_c')
-#         describe(variance_c_var, 'LrLiVAE/rec_samples/variance_c_var')
-#         describe(covariance_c, 'LrLiVAE/rec_samples/covariance_c')
-#         self.check_weights('Identity', show=False)
-#         self.check_weights('IdentityMnist/base_layers/fully_connected_1/weights:0', show=True)
-#         self.check_weights('IdentityMnist/base_layers/fully_connected/BatchNorm/beta:0', show=True)
-#         self.check_weights('IdentityMnist/base_layers/fully_connected/BatchNorm/gamma:0', show=True)
+        if DEBUG:
+            # TODO:
+            from my_utils import describe
+            describe(imgs, 'LrLiVAE/rec_samples/imgs')
+            describe(rec_imgs, 'LrLiVAE/rec_samples/rec_imgs')
+#             describe(means_c, 'LrLiVAE/rec_samples/means_c')
+#             describe(variance_c_var, 'LrLiVAE/rec_samples/variance_c_var')
+#             describe(covariance_c, 'LrLiVAE/rec_samples/covariance_c')
+#             self.check_weights('Identity', show=False)
+#             self.check_weights('IdentityMnist/base_layers/fully_connected_1/weights:0', show=True)
+#             self.check_weights('IdentityMnist/base_layers/fully_connected/BatchNorm/beta:0', show=True)
+#             self.check_weights('IdentityMnist/base_layers/fully_connected/BatchNorm/gamma:0', show=True)
         
         return rec_imgs
     
@@ -768,6 +768,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', default='training', choices=['training', 'generation', 'inpainting', 'exchanging'])
     # add dataset choice
     parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist', 'miniImagenet', 'omniglot', 'omniglot-noLatin'])
+    parser.add_argument('--stop_iter', default=None, type=int, help='how many iterations to stop. (only for mode=training)')
     parser.add_argument('--restore', action='store_true', help='whether load model or not when training.')
     args = parser.parse_args()
 
@@ -839,12 +840,14 @@ if __name__ == '__main__':
                       log_dir=os.path.join('logs', experiment_name),
                       model_dir=os.path.join('models',experiment_name))
     if mode == 'training':
-        training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001, 'omniglot':200001, 'omniglot-noLatin':200001}
-        wgan.train(sample_folder, training_iters=training_iters[args.dataset], batch_size = batch_size, restore = args.restore)
+        if args.stop_iter == None:
+            training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001, 'omniglot':20001, 'omniglot-noLatin':10001}
+            args.stop_iter = training_iters[args.dataset]
+        wgan.train(sample_folder, training_iters=args.stop_iter, batch_size = batch_size, restore = args.restore)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
-        model_step = {'mnist':10000, 'facescrub':52000, 'miniImagenet':300000, 'omniglot':100000, 'omniglot-noLatin':100000}
-        num_samples = {'mnist':530, 'facescrub':53000, 'miniImagenet':53000, 'omniglot':53000, 'omniglot-noLatin':53000}
+        model_step = {'mnist':10000, 'facescrub':52000, 'miniImagenet':300000, 'omniglot':20000, 'omniglot-noLatin':10000}
+        num_samples = {'mnist':530, 'facescrub':53000, 'miniImagenet':530, 'omniglot':530, 'omniglot-noLatin':530}
         wgan.gen_samples(model_step=model_step[args.dataset], num_samples=num_samples[args.dataset])
     elif mode == 'inpainting':
         if args.dataset == 'facescrub':
