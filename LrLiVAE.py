@@ -172,7 +172,7 @@ def sample_z_muvar(mu, log_var):
 
 class GMM_AE_GAN():
     def __init__(self, generator, identity, attribute, discriminator, latent_discriminator, data, is_training, log_dir='logs/mnist',
-                 model_dir='models/mnist/', learn_rate_init = 2e-4):
+                 model_dir='models/mnist/', learn_rate_init = 2e-4, save_freq=500):
         self.log_vars = []
         self.log_dir = log_dir
         if not os.path.exists(log_dir):
@@ -182,7 +182,7 @@ class GMM_AE_GAN():
             os.makedirs(model_dir)
 
         # to fix bug (generate all the same), seems not work lollllllll fk
-#         tf.reset_default_graph()
+        tf.reset_default_graph()
         
         self.generator = generator
         self.identity = identity
@@ -191,6 +191,7 @@ class GMM_AE_GAN():
         self.latent_discriminator = latent_discriminator
         self.data = data
         self.learn_rate_init = learn_rate_init
+        self.save_freq = save_freq
 
         self.z_dim = self.data.z_dim # 100
         if hasattr(self.data, 'zc_dim'):
@@ -370,8 +371,44 @@ class GMM_AE_GAN():
 #             raise 'Check your pretrained {:s}'.format(ckpt.model_checkpoint_path)
         
         
-    def train(self, sample_folder, training_iters=320001, batch_size=96, restore=False, n_gm = 3, base_lr = 5e-4):
-        self.sess.run(tf.global_variables_initializer()) # should run this line with or without restore
+    def train(self, sample_folder, training_iters=320001, batch_size=96, restore=False, n_gm = 3, base_lr = 5e-4, eval_model=None):
+        
+        def generate_samples(gvaegan, X_batch, Y_batch, file_prefix, n_draws=16):
+            X_samples = X_batch[:n_draws]
+            Y_samples = Y_batch[:n_draws]
+            feed_dict2 = {
+                    # G_sample feed_dict
+                    gvaegan.z_c: sample_z(n_draws, gvaegan.zc_dim), 
+                    gvaegan.z_p: sample_z(n_draws, gvaegan.z_dim), 
+#                     self.z_p2: sample_z(16, self.z_dim, std=1.2), #sample_z(), 
+                    gvaegan.lambda_zlogvar: lambda_zlogvar, 
+                    gvaegan.Y_rand: np.random.choice(gvaegan.data.y_dim, n_draws), 
+                    gvaegan.X: X_samples, 
+                    gvaegan.Y: Y_samples, 
+                         }
+#             samples, rec_samples = gvaegan.sess.run(
+#                         [self.G_sample, self.G_dec], 
+            samples, rec_samples, rec_samples2 = gvaegan.sess.run(
+                [gvaegan.G_sample, gvaegan.G_dec, gvaegan.G_dec2], 
+                feed_dict=feed_dict2)
+
+            fig = gvaegan.data.data2fig(samples)
+            plt.savefig('{}/{}.png'.format(sample_folder, file_prefix+'gen_rand'), bbox_inches='tight')
+            plt.close(fig)
+
+            rec_fig = gvaegan.data.data2fig(rec_samples)
+            plt.savefig('{}/{}.png'.format(sample_folder, file_prefix+'rec'), bbox_inches='tight')
+            plt.close(rec_fig)
+
+            rec2_fig = gvaegan.data.data2fig(rec_samples2)
+            plt.savefig('{}/{}.png'.format(sample_folder, file_prefix+'rec_with_lambda'), bbox_inches='tight')
+            plt.close(rec2_fig)
+
+            ori_fig = gvaegan.data.data2fig(X_samples)
+            plt.savefig('{}/{}.png'.format(sample_folder, file_prefix+'ori'), bbox_inches='tight')
+            plt.close(ori_fig)
+        
+        self.sess.run(tf.global_variables_initializer()) # should run this line with(?) or without restore
         i = 0
         restore_iter = 0
         if restore:
@@ -449,58 +486,85 @@ class GMM_AE_GAN():
 #                                   self.z_p: sample_z(16, self.z_dim),
 #                                   self.Y_rand: np.random.choice(self.data.y_dim, 16)}
                     # use original feed_dict, just modify the batch_size
-                    X_samples = X_b[:16]
-                    Y_samples = Y_b[:16]
-                    feed_dict2 = {
-                            # G_sample feed_dict
-                            self.z_c: sample_z(16, self.zc_dim), 
-                            self.z_p: sample_z(16, self.z_dim), 
-#                             self.z_p2: sample_z(16, self.z_dim, std=1.2), #sample_z(), 
-                            self.lambda_zlogvar: lambda_zlogvar, 
-                            self.Y_rand: np.random.choice(self.data.y_dim, 16), 
-                            self.X: X_samples, 
-                            self.Y: Y_samples, 
-                                 }
-#                     samples, rec_samples = self.sess.run(
-#                         [self.G_sample, self.G_dec], 
-                    samples, rec_samples, rec_samples2 = self.sess.run(
-                        [self.G_sample, self.G_dec, self.G_dec2], 
-                        feed_dict=feed_dict2)
+                    if False:
+                        X_samples = X_b[:16]
+                        Y_samples = Y_b[:16]
+                        feed_dict2 = {
+                                # G_sample feed_dict
+                                self.z_c: sample_z(16, self.zc_dim), 
+                                self.z_p: sample_z(16, self.z_dim), 
+    #                             self.z_p2: sample_z(16, self.z_dim, std=1.2), #sample_z(), 
+                                self.lambda_zlogvar: lambda_zlogvar, 
+                                self.Y_rand: np.random.choice(self.data.y_dim, 16), 
+                                self.X: X_samples, 
+                                self.Y: Y_samples, 
+                                     }
+    #                     samples, rec_samples = self.sess.run(
+    #                         [self.G_sample, self.G_dec], 
+                        samples, rec_samples, rec_samples2 = self.sess.run(
+                            [self.G_sample, self.G_dec, self.G_dec2], 
+                            feed_dict=feed_dict2)
 
-                    fig = self.data.data2fig(samples)
-                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)), bbox_inches='tight')
-                    plt.close(fig)
+                        fig = self.data.data2fig(samples)
+                        plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)), bbox_inches='tight')
+                        plt.close(fig)
+
+                        rec_fig = self.data.data2fig(rec_samples)
+                        plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec'), bbox_inches='tight')
+                        plt.close(rec_fig)
+
+                        rec2_fig = self.data.data2fig(rec_samples2)
+                        plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec_with_lambda'), bbox_inches='tight')
+                        plt.close(rec2_fig)
+
+                        ori_fig = self.data.data2fig(X_samples)
+                        plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'ori'), bbox_inches='tight')
+                        plt.close(ori_fig)
                     
-                    rec_fig = self.data.data2fig(rec_samples)
-                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec'), bbox_inches='tight')
-                    plt.close(rec_fig)
                     
-                    rec2_fig = self.data.data2fig(rec_samples2)
-                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec2'), bbox_inches='tight')
-                    plt.close(rec2_fig)
-                    
-                    ori_fig = self.data.data2fig(X_samples)
-                    plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'ori'), bbox_inches='tight')
-                    plt.close(ori_fig)
+#                     n_draws = 16
+#                     generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3), n_draws=n_draws)
+#                     # go to is_training=False mode
+#                     self.set_is_training(is_training=False, resume_iter=iter)
+# #                     if eval_model is not None:
+# #                         generate_samples(eval_model, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
+#                     generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
+#                     # go back to training mode
+#                     self.set_is_training(is_training=True, resume_iter=iter)
+
+
                     
                     i += 1
 
-                if (iter % 1000 == 0) or iter == training_iters - 1:
+                if (iter % self.save_freq == 0) or iter == training_iters - 1:
                     save_path = os.path.join(self.model_dir, "model.ckpt")
                     self.saver.save(self.sess, save_path, global_step=iter)
+                    
+                    # draw examples
+                    n_draws = 16
+                    generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3), n_draws=n_draws)
+                    # go to is_training=False mode
+                    self.set_is_training(is_training=False, resume_iter=iter)
+#                     if eval_model is not None:
+#                         generate_samples(eval_model, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
+                    generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
+                    # go back to training mode
+                    self.set_is_training(is_training=True, resume_iter=iter)
 
     # TODO: set_is_training
-#     def set_is_training(is_training): # this won't work
-#         if self.is_training == is_training:
-#             print('Warning: LrLiVAE.is_training is already %s, so not changed.'%(str(is_training)))
+    def set_is_training(self, is_training, resume_iter):
+        if self.is_training == is_training:
+            print('Warning: LrLiVAE.is_training is already %s, so not changed.'%(str(is_training)))
+            return
         
-#         self.is_training = is_training
+        self.__init__(
+            generator=self.generator, identity=self.identity, attribute=self.attribute, 
+            discriminator=self.discriminator, latent_discriminator=self.latent_discriminator, 
+            data=self.data, is_training=is_training, 
+            log_dir=self.log_dir, model_dir=self.model_dir, 
+            learn_rate_init = self.learn_rate_init)
+        self.restore(resume_iter)
         
-#         self.generator.is_training = is_training
-#         self.identity.is_training = is_training
-#         self.attribute.is_training = is_training
-#         self.discriminator.is_training = is_training
-#         self.latent_discriminator.is_training = is_training
         
     def check_weights(self, name=None, show=True):
         variables_names = [v.name for v in tf.trainable_variables()] # TODO: not trainable????
@@ -753,6 +817,61 @@ class GMM_AE_GAN():
             skimage.io.imsave(sample_path, img_as_ubyte(sample))
 
 
+def get_dataloader(args):
+    
+    return data
+
+
+# TODO: get_subnets
+# def get_subnets(args, data):
+    
+#     if args.dataset == 'facescrub':
+# #         data = facescrub(is_tanh=True, size = img_size)
+#         generator = GeneratorFace(size = data.size)
+#         identity = IdentityFace(data.y_dim, data.z_dim, size = data.size)
+#         attribute = AttributeFace(data.z_dim, size = data.size)
+#         discriminator = DiscriminatorFaceSN(size=data.size)
+#         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+        
+#     elif args.dataset == 'mnist':
+# #         data = mnist(is_tanh=True)
+#         generator = GeneratorMnist(size = data.size)
+# #         identity = IdentityMnist(data.y_dim, data.z_dim, size = data.size) # z_dim should be data.zc_dim ??
+#         identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size) # z_dim should be data.zc_dim ??
+#         attribute = AttributeMnist(data.z_dim, size = data.size)
+#         discriminator = DiscriminatorMnistSN(size=data.size)
+# #         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
+#         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+    
+#     elif 'omniglot' in args.dataset:
+# #         datapath = os.path.join(closer_look_path, 'filelists/omniglot/hdf5')
+# #         split = 'noLatin' if 'noLatin' in args.dataset else 'train'
+# #         data = Omniglot(datapath=datapath, size=args.img_size, batch_size=batch_size, 
+# #                        is_tanh=True, flag='conv', split=split) # train, noLatin
+#         generator = GeneratorMnist(size = data.size)
+# #         identity = IdentityMnist(data.y_dim, data.z_dim, size = data.size) # z_dim should be data.zc_dim ??
+#         identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size) # z_dim should be data.zc_dim ??
+#         attribute = AttributeMnist(data.z_dim, size = data.size)
+#         discriminator = DiscriminatorMnistSN(size=data.size)
+# #         discriminator = DiscriminatorMnistSNComb(size=data.size) # which to use?
+#         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+    
+#     elif args.dataset == 'miniImagenet': # TODO: design the net structure
+# #         data = MiniImagenet(datapath='../../meta_few-shot/CloserLookFewShot/filelists/miniImagenet', size=args.img_size)
+# #         data_path = os.path.join(closer_look_path, 'filelists/miniImagenet/hdf5')
+# #         data = MiniImagenetV3(datapath=data_path, 
+# #                               size=args.img_size, batch_size=batch_size, aug=True) # TODO: aug
+# #         generator = GeneratorMnist(size = data.size)
+#         generator = GeneratorMiniImg(size = data.size)
+# #         identity = IdentityMnist(data.y_dim, data.zc_dim, size = data.size)
+#         identity = IdentityFace(data.y_dim, data.zc_dim, size = data.size)
+# #         attribute = AttributeMnist(data.z_dim, size = data.size)
+#         attribute = AttributeFace(data.z_dim, size = data.size)
+# #         discriminator = DiscriminatorMnistSN(size=data.size)
+#         discriminator = DiscriminatorFaceSN(size=data.size)
+#         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
+    
+#     return generator, identity, attribute, discriminator, latent_discriminator
 
 
 if __name__ == '__main__':
@@ -770,10 +889,13 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', default='facescrub', choices=['facescrub', 'mnist', 'miniImagenet', 'omniglot', 'omniglot-noLatin'])
     parser.add_argument('--stop_iter', default=None, type=int, help='how many iterations to stop. (only for mode=training)')
     parser.add_argument('--restore', action='store_true', help='whether load model or not when training.')
+    
+    parser.add_argument('--do_eval', action='store_true', 
+                        help='when training, whether evaluate the network performance with is_training=False.')
     args = parser.parse_args()
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    # TODO: img_size should be different corresponding to dataset
+    
     img_size_dict = {'facescrub':64, 'mnist':28, 'miniImagenet':84, 'omniglot':28, 'omniglot-noLatin':28}
     if args.img_size is None:
         args.img_size = img_size_dict[args.dataset]
@@ -833,6 +955,7 @@ if __name__ == '__main__':
         latent_discriminator = LatentDiscriminator(y_dim = data.y_dim)
 
 
+    # TODO: modify is_training & wgan conditioned on mode
     is_training = True
     # run
 
@@ -843,7 +966,17 @@ if __name__ == '__main__':
         if args.stop_iter == None:
             training_iters = {'mnist':10001, 'facescrub':52001, 'miniImagenet':300001, 'omniglot':20001, 'omniglot-noLatin':10001}
             args.stop_iter = training_iters[args.dataset]
-        wgan.train(sample_folder, training_iters=args.stop_iter, batch_size = batch_size, restore = args.restore)
+        
+        if args.do_eval:
+#             wgan_eval = GMM_AE_GAN(generator, identity, attribute, discriminator, latent_discriminator, data, 
+#                                is_training=False,
+#                               log_dir=os.path.join('logs', experiment_name),
+#                               model_dir=os.path.join('models',experiment_name))
+            wgan_eval = True
+        else:
+            wgan_eval = None
+        wgan.train(sample_folder, training_iters=args.stop_iter, batch_size = batch_size, restore = args.restore, 
+                  eval_model=wgan_eval)
     # wgan.draw_zp_distribution(249000)
     elif mode == 'generation':
         model_step = {'mnist':10000, 'facescrub':52000, 'miniImagenet':300000, 'omniglot':20000, 'omniglot-noLatin':10000}
