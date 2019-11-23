@@ -366,7 +366,10 @@ class GMM_AE_GAN():
         
     def train(self, sample_folder, training_iters=320001, batch_size=96, restore=False, n_gm = 3, base_lr = 5e-4, eval_model=None):
         
-        def generate_samples(gvaegan, X_batch, Y_batch, file_prefix, n_draws=16):
+        def generate_samples(gvaegan, X_batch, Y_batch, file_prefix, nr=4, nc=4):
+            n_draws=nr*nc
+            assert n_draws <= Y_batch.shape[0]
+            
             X_samples = X_batch[:n_draws]
             Y_samples = Y_batch[:n_draws]
             feed_dict2 = {
@@ -385,19 +388,19 @@ class GMM_AE_GAN():
                 [gvaegan.G_sample, gvaegan.G_dec, gvaegan.G_dec2], 
                 feed_dict=feed_dict2)
 
-            fig = gvaegan.data.data2fig(samples)
+            fig = gvaegan.data.data2fig(samples, nr, nc)
             plt.savefig('{}/{}.png'.format(sample_folder, file_prefix+'gen_rand'), bbox_inches='tight')
             plt.close(fig)
 
-            rec_fig = gvaegan.data.data2fig(rec_samples)
+            rec_fig = gvaegan.data.data2fig(rec_samples, nr, nc)
             plt.savefig('{}/{}.png'.format(sample_folder, file_prefix+'rec'), bbox_inches='tight')
             plt.close(rec_fig)
 
-            rec2_fig = gvaegan.data.data2fig(rec_samples2)
+            rec2_fig = gvaegan.data.data2fig(rec_samples2, nr, nc)
             plt.savefig('{}/{}.png'.format(sample_folder, file_prefix+'rec_with_lambda'), bbox_inches='tight')
             plt.close(rec2_fig)
 
-            ori_fig = gvaegan.data.data2fig(X_samples)
+            ori_fig = gvaegan.data.data2fig(X_samples, nr, nc)
             plt.savefig('{}/{}.png'.format(sample_folder, file_prefix+'ori'), bbox_inches='tight')
             plt.close(ori_fig)
         
@@ -469,21 +472,22 @@ class GMM_AE_GAN():
                 print('Iter: {}; rec_loss: {:.4}, GM_loss: {:.4}, KL_loss: {:.4}, C_loss: {:.4}, adv_loss: {:.4}, g_loss: {:.4}, d_loss: {:.4}'.format(
                     iter, rec_loss_curr, GM_loss_curr, KL_loss_curr, C_loss_curr, adv_loss_curr, g_loss_curr, d_loss_curr))
 
-                if (iter % self.save_freq == 0) or iter == training_iters - 1:
-                    save_path = os.path.join(self.model_dir, "model.ckpt")
-                    self.saver.save(self.sess, save_path, global_step=iter)
-                    
-                    # draw examples
-                    n_draws = 16
-                    generate_samples(self, X_b, Y_b, file_prefix=str(iter).zfill(7), n_draws=n_draws)
-                    # go to is_training=False mode
-                    self.set_is_training(is_training=False, resume_iter=iter)
-                    generate_samples(self, X_b, Y_b, file_prefix=str(iter).zfill(7)+'_eval-', n_draws=n_draws)
+            if (iter % self.save_freq == 0) or iter == training_iters - 1:
+                save_path = os.path.join(self.model_dir, "model.ckpt")
+                self.saver.save(self.sess, save_path, global_step=iter)
+
+                # draw examples
+                nr = 5
+                nc = 5
+                generate_samples(self, X_b, Y_b, file_prefix=str(iter).zfill(7), nr=nr, nc=nc)
+                # go to is_training=False mode
+                self.set_is_training(is_training=False, resume_iter=iter)
+                generate_samples(self, X_b, Y_b, file_prefix=str(iter).zfill(7)+'_eval-', nr=nr, nc=nc)
 #                     if eval_model is not None:
 #                         generate_samples(eval_model, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
-                    # go back to training mode
-                    self.set_is_training(is_training=True, resume_iter=iter)
-                    print('finished set back to is_training=True.')
+                # go back to training mode
+                self.set_is_training(is_training=True, resume_iter=iter)
+                print('finished set back to is_training=True.')
 
     # TODO: set_is_training
     def set_is_training(self, is_training, resume_iter):
