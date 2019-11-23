@@ -409,6 +409,8 @@ class GMM_AE_GAN():
             plt.close(ori_fig)
         
         self.sess.run(tf.global_variables_initializer()) # should run this line with(?) or without restore
+        
+        # TODO: i seems useless now A___A
         i = 0
         restore_iter = 0
         if restore:
@@ -481,60 +483,61 @@ class GMM_AE_GAN():
                 print('Iter: {}; rec_loss: {:.4}, GM_loss: {:.4}, KL_loss: {:.4}, C_loss: {:.4}, adv_loss: {:.4}, g_loss: {:.4}, d_loss: {:.4}'.format(
                     iter, rec_loss_curr, GM_loss_curr, KL_loss_curr, C_loss_curr, adv_loss_curr, g_loss_curr, d_loss_curr))
 
-                if iter % 1000 == 0:
-#                     feed_dict = {self.z_c: sample_z(16, self.zc_dim),
-#                                   self.z_p: sample_z(16, self.z_dim),
-#                                   self.Y_rand: np.random.choice(self.data.y_dim, 16)}
-                    # use original feed_dict, just modify the batch_size
-                    if False:
-                        X_samples = X_b[:16]
-                        Y_samples = Y_b[:16]
-                        feed_dict2 = {
-                                # G_sample feed_dict
-                                self.z_c: sample_z(16, self.zc_dim), 
-                                self.z_p: sample_z(16, self.z_dim), 
-    #                             self.z_p2: sample_z(16, self.z_dim, std=1.2), #sample_z(), 
-                                self.lambda_zlogvar: lambda_zlogvar, 
-                                self.Y_rand: np.random.choice(self.data.y_dim, 16), 
-                                self.X: X_samples, 
-                                self.Y: Y_samples, 
-                                     }
-    #                     samples, rec_samples = self.sess.run(
-    #                         [self.G_sample, self.G_dec], 
-                        samples, rec_samples, rec_samples2 = self.sess.run(
-                            [self.G_sample, self.G_dec, self.G_dec2], 
-                            feed_dict=feed_dict2)
+                # TODO: this loop seems useless now A___A
+#                 if iter % 1000 == 0:
+# #                     feed_dict = {self.z_c: sample_z(16, self.zc_dim),
+# #                                   self.z_p: sample_z(16, self.z_dim),
+# #                                   self.Y_rand: np.random.choice(self.data.y_dim, 16)}
+#                     # use original feed_dict, just modify the batch_size
+#                     if False:
+#                         X_samples = X_b[:16]
+#                         Y_samples = Y_b[:16]
+#                         feed_dict2 = {
+#                                 # G_sample feed_dict
+#                                 self.z_c: sample_z(16, self.zc_dim), 
+#                                 self.z_p: sample_z(16, self.z_dim), 
+#     #                             self.z_p2: sample_z(16, self.z_dim, std=1.2), #sample_z(), 
+#                                 self.lambda_zlogvar: lambda_zlogvar, 
+#                                 self.Y_rand: np.random.choice(self.data.y_dim, 16), 
+#                                 self.X: X_samples, 
+#                                 self.Y: Y_samples, 
+#                                      }
+#     #                     samples, rec_samples = self.sess.run(
+#     #                         [self.G_sample, self.G_dec], 
+#                         samples, rec_samples, rec_samples2 = self.sess.run(
+#                             [self.G_sample, self.G_dec, self.G_dec2], 
+#                             feed_dict=feed_dict2)
 
-                        fig = self.data.data2fig(samples)
-                        plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)), bbox_inches='tight')
-                        plt.close(fig)
+#                         fig = self.data.data2fig(samples)
+#                         plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)), bbox_inches='tight')
+#                         plt.close(fig)
 
-                        rec_fig = self.data.data2fig(rec_samples)
-                        plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec'), bbox_inches='tight')
-                        plt.close(rec_fig)
+#                         rec_fig = self.data.data2fig(rec_samples)
+#                         plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec'), bbox_inches='tight')
+#                         plt.close(rec_fig)
 
-                        rec2_fig = self.data.data2fig(rec_samples2)
-                        plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec_with_lambda'), bbox_inches='tight')
-                        plt.close(rec2_fig)
+#                         rec2_fig = self.data.data2fig(rec_samples2)
+#                         plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'rec_with_lambda'), bbox_inches='tight')
+#                         plt.close(rec2_fig)
 
-                        ori_fig = self.data.data2fig(X_samples)
-                        plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'ori'), bbox_inches='tight')
-                        plt.close(ori_fig)
+#                         ori_fig = self.data.data2fig(X_samples)
+#                         plt.savefig('{}/{}.png'.format(sample_folder, str(i).zfill(3)+'ori'), bbox_inches='tight')
+#                         plt.close(ori_fig)
                     
                     
-#                     n_draws = 16
-#                     generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3), n_draws=n_draws)
-#                     # go to is_training=False mode
-#                     self.set_is_training(is_training=False, resume_iter=iter)
-# #                     if eval_model is not None:
-# #                         generate_samples(eval_model, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
-#                     generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
-#                     # go back to training mode
-#                     self.set_is_training(is_training=True, resume_iter=iter)
+# #                     n_draws = 16
+# #                     generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3), n_draws=n_draws)
+# #                     # go to is_training=False mode
+# #                     self.set_is_training(is_training=False, resume_iter=iter)
+# # #                     if eval_model is not None:
+# # #                         generate_samples(eval_model, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
+# #                     generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
+# #                     # go back to training mode
+# #                     self.set_is_training(is_training=True, resume_iter=iter)
 
 
                     
-                    i += 1
+#                     i += 1
 
                 if (iter % self.save_freq == 0) or iter == training_iters - 1:
                     save_path = os.path.join(self.model_dir, "model.ckpt")
@@ -542,14 +545,15 @@ class GMM_AE_GAN():
                     
                     # draw examples
                     n_draws = 16
-                    generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3), n_draws=n_draws)
+                    generate_samples(self, X_b, Y_b, file_prefix=str(iter).zfill(7), n_draws=n_draws)
                     # go to is_training=False mode
                     self.set_is_training(is_training=False, resume_iter=iter)
+                    generate_samples(self, X_b, Y_b, file_prefix=str(iter).zfill(7)+'_eval-', n_draws=n_draws)
 #                     if eval_model is not None:
 #                         generate_samples(eval_model, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
-                    generate_samples(self, X_b, Y_b, file_prefix=str(i).zfill(3)+'eval-', n_draws=n_draws)
                     # go back to training mode
                     self.set_is_training(is_training=True, resume_iter=iter)
+                    print('finished set back to is_training=True.')
 
     # TODO: set_is_training
     def set_is_training(self, is_training, resume_iter):
@@ -562,7 +566,9 @@ class GMM_AE_GAN():
             discriminator=self.discriminator, latent_discriminator=self.latent_discriminator, 
             data=self.data, is_training=is_training, 
             log_dir=self.log_dir, model_dir=self.model_dir, 
-            learn_rate_init = self.learn_rate_init)
+            learn_rate_init = self.learn_rate_init, 
+            save_freq = self.save_freq
+        )
         self.restore(resume_iter)
         
         
