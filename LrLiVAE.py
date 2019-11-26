@@ -362,8 +362,8 @@ class GMM_AE_GAN():
 #             print('done')
 #         except:
 #             raise 'Check your pretrained {:s}'.format(ckpt.model_checkpoint_path)
-        
-        
+
+
     def train(self, sample_folder, training_iters=320001, batch_size=96, restore=False, n_gm = 3, base_lr = 5e-4, eval_model=None):
         
         def generate_samples(gvaegan, X_batch, Y_batch, file_prefix, nr=4, nc=4):
@@ -545,10 +545,6 @@ class GMM_AE_GAN():
 #             describe(means_c, 'LrLiVAE/rec_samples/means_c')
 #             describe(variance_c_var, 'LrLiVAE/rec_samples/variance_c_var')
 #             describe(covariance_c, 'LrLiVAE/rec_samples/covariance_c')
-#             self.check_weights('Identity', show=False)
-#             self.check_weights('IdentityMnist/base_layers/fully_connected_1/weights:0', show=True)
-#             self.check_weights('IdentityMnist/base_layers/fully_connected/BatchNorm/beta:0', show=True)
-#             self.check_weights('IdentityMnist/base_layers/fully_connected/BatchNorm/gamma:0', show=True)
         
         return rec_imgs
     
