@@ -174,12 +174,19 @@ class Omniglot():
             img_sample = sample.reshape(self.size, self.size, self.channel) # 28, 28, 1
             img_sample = np.repeat(img_sample, repeats=3, axis=2) # 28, 28, 3
             plt.imshow(img_sample, cmap='Greys_r') # self.channel = 1, but channel still 3
-        if save_path:
+        if save_path is not None:
+            save_dir = os.path.dirname(save_path)
+            if not os.path.exists(save_dir):
+                os.makedirs(save_dir)
             fig.savefig(save_path)
             print('finish save image to:', save_path)
         return fig # should explicitly close fig
     
     def sample2fig2jpg(self, sample, dst_dir, filename):
+        '''
+        Args:
+            out_size (tuple): (h, w) # no need currently i think
+        '''
         if self.is_tanh:
             sample = (sample + 1) / 2
         
